@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direct Visual Servoing Using Multiscale Decomposition</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800&display=swap');
+:root{
+--primary:#0a1628;--secondary:#1a2744;--accent:#4facfe;--accent2:#00f2fe;
+--gold:#f5a623;--text:#e8edf5;--gradient:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%);
+--gradient2:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+}
+body{font-family:'Poppins',sans-serif;background:var(--primary);color:var(--text);overflow:hidden;height:100vh;width:100vw}
+.presentation{position:relative;width:100%;height:100%}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;opacity:0;transform:translateX(100px);transition:all 0.6s cubic-bezier(0.25,0.46,0.45,0.94);pointer-events:none;background:var(--primary)}
+.slide.active{opacity:1;transform:translateX(0);pointer-events:all}
+.slide.prev{opacity:0;transform:translateX(-100px)}
+.slide::before{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 20% 50%,rgba(79,172,254,0.08) 0%,transparent 60%);pointer-events:none}
+.slide::after{content:'';position:absolute;bottom:0;right:0;width:400px;height:400px;background:radial-gradient(circle,rgba(0,242,254,0.05) 0%,transparent 70%);pointer-events:none}
+h1{font-family:'Playfair Display',serif;font-size:3.2em;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;text-align:center;line-height:1.2}
+h2{font-size:2em;font-weight:700;color:var(--accent);margin-bottom:30px;position:relative;padding-bottom:15px}
+h2::after{content:'';position:absolute;bottom:0;left:0;width:80px;height:4px;background:var(--gradient);border-radius:2px}
+h2.center::after{left:50%;transform:translateX(-50%)}
+h3{font-size:1.3em;font-weight:600;color:var(--gold);margin-bottom:15px}
+p,.desc{font-size:1.1em;line-height:1.8;color:rgba(232,237,245,0.85);max-width:900px}
+.subtitle{font-size:1.4em;color:rgba(232,237,245,0.7);margin-bottom:10px;font-weight:300}
+.authors{font-size:1.2em;margin-top:30px;color:var(--gold);font-weight:500}
+.school{font-size:1em;color:rgba(232,237,245,0.6);margin-top:10px;font-style:italic}
+ul{list-style:none;padding:0;width:100%;max-width:900px}
+ul li{padding:14px 20px;margin:10px 0;background:rgba(26,39,68,0.6);border-left:4px solid var(--accent);border-radius:0 12px 12px 0;font-size:1.05em;line-height:1.6;backdrop-filter:blur(10px);transition:all 0.3s ease;position:relative}
+ul li:hover{background:rgba(79,172,254,0.1);transform:translateX(10px)}
+ul li strong{color:var(--accent2)}
+ul li em{color:var(--gold);font-style:normal;font-weight:600}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:40px;width:100%;max-width:1000px}
+.card{background:rgba(26,39,68,0.5);border:1px solid rgba(79,172,254,0.2);border-radius:16px;padding:30px;backdrop-filter:blur(10px);transition:all 0.3s ease}
+.card:hover{border-color:var(--accent);transform:translateY(-5px);box-shadow:0 20px 40px rgba(0,0,0,0.3)}
+.card h3{margin-bottom:12px}
+.slide-number{position:fixed;bottom:30px;right:40px;font-size:0.9em;color:rgba(232,237,245,0.4);z-index:1000;font-weight:500}
+.progress-bar{position:fixed;top:0;left:0;height:4px;background:var(--gradient);z-index:1000;transition:width 0.4s ease}
+.nav{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);display:flex;gap:15px;z-index:1000}
+.nav button{background:rgba(79,172,254,0.15);border:1px solid rgba(79,172,254,0.3);color:var(--accent);padding:12px 24px;border-radius:30px;cursor:pointer;font-family:'Poppins',sans-serif;font-size:0.9em;font-weight:500;transition:all 0.3s ease;backdrop-filter:blur(10px)}
+.nav button:hover{background:rgba(79,172,254,0.3);transform:scale(1.05)}
+.tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.8em;font-weight:600;margin:3px;background:rgba(79,172,254,0.15);color:var(--accent);border:1px solid rgba(79,172,254,0.3)}
+.tag.gold{background:rgba(245,166,35,0.15);color:var(--gold);border-color:rgba(245,166,35,0.3)}
+.highlight-box{background:linear-gradient(135deg,rgba(79,172,254,0.1),rgba(0,242,254,0.05));border:1px solid rgba(79,172,254,0.3);border-radius:16px;padding:25px 30px;margin:15px 0;width:100%;max-width:900px}
+.icon{font-size:2.5em;margin-bottom:15px}
+.section-title{font-family:'Playfair Display',serif;font-size:2.8em;background:var(--gradient2);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center}
+.fade-in{animation:fadeIn 0.8s ease forwards}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.diagram-box{background:rgba(26,39,68,0.4);border:1px solid rgba(79,172,254,0.2);border-radius:12px;padding:20px;margin:10px 0;text-align:center}
+.flow{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:15px 0}
+.flow-item{background:rgba(79,172,254,0.15);border:1px solid rgba(79,172,254,0.4);padding:10px 18px;border-radius:8px;font-weight:500;font-size:0.95em}
+.flow-arrow{color:var(--accent);font-size:1.3em}
+.slide-content{width:100%;max-width:1000px;display:flex;flex-direction:column;align-items:flex-start}
+.center-content{align-items:center;text-align:center}
+</style>
+</head>
+<body>
+<div class="progress-bar" id="progressBar"></div>
+<div class="slide-number" id="slideNumber"></div>
+<div class="presentation" id="presentation">
+
+<!-- SLIDE 1: Title -->
+<div class="slide active">
+<div class="center-content" style="text-align:center;display:flex;flex-direction:column;align-items:center">
+<p class="subtitle" style="margin-bottom:5px">Master's Thesis Defense</p>
+<h1>Direct Visual Servoing Using<br>Multiscale Decomposition</h1>
+<div style="width:120px;height:4px;background:var(--gradient);border-radius:2px;margin:25px auto"></div>
+<p class="authors">ABBOU Ahmed Mohammed &amp; KHEROUAA Alaa Eddine</p>
+<p class="school">ESG2E Oran (2025-2026)</p>
+<div style="margin-top:40px">
+<span class="tag">DWT-PVS</span>
+<span class="tag">LWT-PVS</span>
+<span class="tag gold">Smart Switch</span>
+<span class="tag">Visual Servoing</span>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 2: General Context -->
+<div class="slide">
+<div class="slide-content">
+<h2>General Context</h2>
+<ul>
+<li><span class="icon" style="font-size:1.2em">&#128302;</span> The importance of <strong>computer vision</strong> and <strong>visual servoing</strong> in robotic control</li>
+<li><span class="icon" style="font-size:1.2em">&#129302;</span> Bridging the gap between visual perception and robot motion planning</li>
+<li><span class="icon" style="font-size:1.2em">&#128247;</span> Configuration studied: <em>Eye-in-Hand</em> camera setup &mdash; camera mounted directly on the robot end-effector</li>
+</ul>
+<div class="highlight-box" style="margin-top:25px">
+<p style="text-align:center;font-size:1em"><strong>Goal:</strong> Control robot motion using real-time visual feedback from the onboard camera</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 3: Problem Statement -->
+<div class="slide">
+<div class="slide-content">
+<h2>Problem Statement</h2>
+<h3>Limitations of Pure Photometric Visual Servoing (PVS)</h3>
+<ul>
+<li>Strong dependency on the <strong>brightness constancy assumption</strong></li>
+<li>High <strong>vulnerability</strong> to dynamic lighting variations</li>
+<li>Susceptibility to <em>Glare Attacks</em> &mdash; sudden brightness changes that destabilize the control loop</li>
+</ul>
+<div class="highlight-box" style="margin-top:20px">
+<p style="text-align:center;color:var(--gold)">&#9888;&#65039; These limitations make pure PVS unreliable in real-world uncontrolled environments</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 4: Objectives & Contributions -->
+<div class="slide">
+<div class="slide-content">
+<h2>Objectives &amp; Contributions</h2>
+<ul>
+<li>&#127919; Improve robustness through <strong>multiscale decomposition</strong></li>
+<li>&#128640; Propose <strong>DWT-PVS</strong> and its computationally optimized variant <em>LWT-PVS</em> (Lifting Wavelet Transform)</li>
+<li>&#9889; Integrate a dynamic <em>Coarse-to-Fine</em> strategy via <strong>Smart Switch</strong></li>
+</ul>
+<div class="two-col" style="margin-top:30px">
+<div class="card">
+<h3>&#128270; Multiscale Analysis</h3>
+<p style="font-size:0.95em">Decompose the image into frequency bands to separate illumination from structural details</p>
+</div>
+<div class="card">
+<h3>&#9889; Real-Time Performance</h3>
+<p style="font-size:0.95em">LWT avoids complex multiplications enabling real-time computation at 25 FPS</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 5: Section - Theoretical Foundations -->
+<div class="slide">
+<div class="center-content" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<p class="subtitle">Part II</p>
+<p class="section-title">Theoretical Foundations<br>&amp; State of the Art</p>
+<div style="width:120px;height:4px;background:var(--gradient2);border-radius:2px;margin:25px auto"></div>
+<p style="color:rgba(232,237,245,0.6);font-size:1.1em;margin-top:10px">Visual Servoing Concepts &amp; Frequency Analysis</p>
+</div>
+</div>
+
+<!-- SLIDE 6: Visual Servoing Concepts -->
+<div class="slide">
+<div class="slide-content">
+<h2>Visual Servoing Concepts</h2>
+<div class="two-col">
+<div class="card">
+<h3>IBVS</h3>
+<p style="font-size:0.95em"><strong>Image-Based Visual Servoing</strong><br>Control law defined directly in the image space using geometric features (points, lines)</p>
+</div>
+<div class="card">
+<h3>PBVS</h3>
+<p style="font-size:0.95em"><strong>Pose-Based Visual Servoing</strong><br>Estimates the 3D pose then computes control in Cartesian space</p>
+</div>
+</div>
+<div class="highlight-box" style="margin-top:30px">
+<h3 style="color:var(--accent2)">PVS &mdash; Photometric Visual Servoing (Direct Approach)</h3>
+<p style="font-size:0.95em">Directly uses <strong>pixel intensities</strong> without extracting geometric features. Simpler but sensitive to illumination changes.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 7: Frequency Analysis & Limits -->
+<div class="slide">
+<div class="slide-content">
+<h2>Frequency Analysis &amp; Its Limits</h2>
+<ul>
+<li>&#128200; Classical tool: <strong>Fourier Transform</strong> &mdash; decomposes signals into frequency components</li>
+<li>&#10060; <strong>Limitation:</strong> No spatial localization for non-stationary signals</li>
+<li>&#128248; Images are inherently non-stationary &mdash; edges, textures, and lighting vary spatially</li>
+</ul>
+<div class="highlight-box" style="margin-top:20px">
+<p style="text-align:center"><strong>Key Insight:</strong> We need a transform that provides <em>both</em> frequency <em>and</em> spatial information &rarr; <span style="color:var(--accent2);font-weight:700">Wavelets</span></p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 8: The Wavelet Solution -->
+<div class="slide">
+<div class="slide-content">
+<h2>The Wavelet Solution: DWT &amp; LWT</h2>
+<div class="two-col">
+<div class="card">
+<h3>&#127754; DWT</h3>
+<p style="font-size:0.95em"><strong>Discrete Wavelet Transform</strong></p>
+<ul style="margin-top:10px">
+<li style="border:none;background:none;padding:5px 0;margin:0">Separates global trends (illumination)</li>
+<li style="border:none;background:none;padding:5px 0;margin:0">Extracts structural details (contours)</li>
+</ul>
+</div>
+<div class="card">
+<h3>&#9889; LWT</h3>
+<p style="font-size:0.95em"><strong>Lifting Wavelet Transform</strong></p>
+<ul style="margin-top:10px">
+<li style="border:none;background:none;padding:5px 0;margin:0">Spatial optimization via <em>Split, Predict, Update</em></li>
+<li style="border:none;background:none;padding:5px 0;margin:0">Avoids complex multiplications</li>
+<li style="border:none;background:none;padding:5px 0;margin:0">Enables real-time computation</li>
+</ul>
+</div>
+</div>
+<div class="flow" style="margin-top:30px">
+<div class="flow-item">Input Signal</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item">Split</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item">Predict</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item">Update</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item" style="background:rgba(0,242,254,0.2);border-color:var(--accent2)">Approximation + Details</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 9: Section - Proposed Approach -->
+<div class="slide">
+<div class="center-content" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<p class="subtitle">Part III</p>
+<p class="section-title">The Proposed Approach</p>
+<div style="width:120px;height:4px;background:var(--gradient2);border-radius:2px;margin:25px auto"></div>
+<p style="color:rgba(232,237,245,0.6);font-size:1.1em;margin-top:10px">DWT-PVS &amp; LWT-PVS Mathematical Modeling</p>
+</div>
+</div>
+
+<!-- SLIDE 10: Mathematical Modeling -->
+<div class="slide">
+<div class="slide-content">
+<h2>Mathematical Modeling: DWT-PVS &amp; LWT-PVS</h2>
+<ul>
+<li>&#128290; Computation of the <strong>photometric error</strong> in the wavelet domain</li>
+<li>&#128202; Image decomposed into sub-bands: approximation (Low-Low) and details (LH, HL, HH)</li>
+<li>&#128161; <strong>LWT Specificity:</strong> Integration of an <em>energy normalization factor</em> to preserve precision across scales</li>
+</ul>
+<div class="highlight-box" style="margin-top:20px">
+<p style="font-size:0.95em"><strong>Error formulation:</strong> e(r) = W(I(r)) - W(I*) where W is the wavelet transform, I(r) is current image, I* is desired image</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 11: Control Architecture & Smart Switch -->
+<div class="slide">
+<div class="slide-content">
+<h2>Control Architecture &amp; Smart Switch</h2>
+<div class="diagram-box" style="margin-bottom:20px">
+<p style="font-weight:600;color:var(--accent);margin-bottom:10px">Control Loop &mdash; Implemented in ViSP</p>
+<div class="flow">
+<div class="flow-item">Camera (25 FPS)</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item">Wavelet Decomposition</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item">Error Computation</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item">Control Law</div>
+<div class="flow-arrow">&#10132;</div>
+<div class="flow-item" style="background:rgba(245,166,35,0.2);border-color:var(--gold)">Robot</div>
+</div>
+<p style="font-size:0.85em;color:rgba(232,237,245,0.5);margin-top:8px">Sampling period: 0.04s</p>
+</div>
+<ul>
+<li>&#128256; <strong>Smart Switch mechanism:</strong> Dynamic transition from <em>Coarse (Low-Low approximation)</em> to <em>Fine (High frequencies)</em></li>
+<li>&#128737;&#65039; <strong>Velocity saturation:</strong> Camera velocities are bounded to guarantee robot safety</li>
+</ul>
+<div class="highlight-box" style="margin-top:15px">
+<p style="text-align:center;font-size:0.95em">Start with global features for large displacements &#10132; Switch to fine details near convergence</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 12: Thank You -->
+<div class="slide">
+<div class="center-content" style="text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<h1>Thank You</h1>
+<p class="subtitle" style="margin-top:10px;font-size:1.3em">Questions &amp; Discussion</p>
+<div style="width:120px;height:4px;background:var(--gradient);border-radius:2px;margin:30px auto"></div>
+<p class="authors">ABBOU Ahmed Mohammed &amp; KHEROUAA Alaa Eddine</p>
+<p class="school" style="margin-top:15px">ESG2E Oran &mdash; 2025-2026</p>
+<div style="margin-top:40px">
+<span class="tag">DWT-PVS</span>
+<span class="tag">LWT-PVS</span>
+<span class="tag gold">Smart Switch</span>
+<span class="tag">Multiscale Decomposition</span>
+</div>
+</div>
+</div>
+
+</div>
+
+<!-- Navigation -->
+<div class="nav">
+<button onclick="prevSlide()">&#9664; Previous</button>
+<button onclick="nextSlide()">Next &#9654;</button>
+</div>
+
+<script>
+let current=0;
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+const progressBar=document.getElementById('progressBar');
+const slideNumber=document.getElementById('slideNumber');
+
+function updateSlide(){
+slides.forEach((s,i)=>{
+s.classList.remove('active','prev');
+if(i===current)s.classList.add('active');
+else if(i<current)s.classList.add('prev');
+});
+progressBar.style.width=((current+1)/total*100)+'%';
+slideNumber.textContent=(current+1)+' / '+total;
+}
+
+function nextSlide(){if(current<total-1){current++;updateSlide()}}
+function prevSlide(){if(current>0){current--;updateSlide()}}
+
+document.addEventListener('keydown',e=>{
+if(e.key==='ArrowRight'||e.key===' ')nextSlide();
+if(e.key==='ArrowLeft')prevSlide();
+if(e.key==='f'||e.key==='F'){document.documentElement.requestFullscreen?.()}
+});
+
+// Touch support
+let touchStartX=0;
+document.addEventListener('touchstart',e=>{touchStartX=e.touches[0].clientX});
+document.addEventListener('touchend',e=>{
+const diff=e.changedTouches[0].clientX-touchStartX;
+if(diff>50)prevSlide();
+if(diff<-50)nextSlide();
+});
+
+updateSlide();
+</script>
+</body>
+</html>
