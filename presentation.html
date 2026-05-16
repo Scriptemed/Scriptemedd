@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Direct Visual Servoing Using Multiscale Decomposition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="presentation.css" />
+</head>
+<body>
+
+  <!-- Background grid + glow -->
+  <div class="bg-layer">
+    <div class="bg-grid"></div>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="bg-glow glow-3"></div>
+  </div>
+
+  <!-- Top progress bar -->
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- Slide counter -->
+  <div class="slide-counter">
+    <span id="currentSlide">1</span><span class="sep">/</span><span id="totalSlides">10</span>
+  </div>
+
+  <!-- Brand badge -->
+  <div class="brand-badge">
+    <div class="brand-dot"></div>
+    <span>ESG2E Oran · 2025–2026</span>
+  </div>
+
+  <!-- Navigation buttons -->
+  <button class="nav-btn nav-prev" id="navPrev" aria-label="Slide précédente">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <button class="nav-btn nav-next" id="navNext" aria-label="Slide suivante">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+
+  <!-- Slides container -->
+  <main class="slides">
+
+    <!-- ============ SLIDE 1 — TITLE ============ -->
+    <section class="slide slide-title active" data-slide="1">
+      <div class="title-grid">
+        <div class="title-left">
+          <div class="chip">
+            <span class="chip-pulse"></span>
+            Soutenance · Master 2026
+          </div>
+          <h1 class="hero-title">
+            <span class="title-line shine">Direct Visual</span>
+            <span class="title-line shine">Servoing</span>
+            <span class="title-accent">using Multiscale Decomposition</span>
+          </h1>
+          <p class="hero-subtitle">
+            Une approche robuste à la photométrie par
+            <strong>ondelettes</strong> et <strong>commutation dynamique</strong>.
+          </p>
+
+          <div class="authors">
+            <div class="author">
+              <div class="avatar">AM</div>
+              <div>
+                <div class="author-name">ABBOU Ahmed Mohammed</div>
+                <div class="author-role">Co-auteur</div>
+              </div>
+            </div>
+            <div class="author">
+              <div class="avatar avatar-alt">AE</div>
+              <div>
+                <div class="author-name">KHEROUAA Alaa Eddine</div>
+                <div class="author-role">Co-auteur</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="meta-row">
+            <div class="meta-item"><span>École</span><strong>ESG2E Oran</strong></div>
+            <div class="meta-item"><span>Année</span><strong>2025 — 2026</strong></div>
+            <div class="meta-item"><span>Domaine</span><strong>Robotique &amp; Vision</strong></div>
+          </div>
+        </div>
+
+        <div class="title-right">
+          <!-- Animated visual: robot eye + wavelet rings -->
+          <div class="hero-visual">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="ring ring-4"></div>
+            <div class="hero-core">
+              <svg viewBox="0 0 120 120" class="eye-svg">
+                <defs>
+                  <radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#7df9ff"/>
+                    <stop offset="60%" stop-color="#00d4ff"/>
+                    <stop offset="100%" stop-color="#0066ff"/>
+                  </radialGradient>
+                </defs>
+                <circle cx="60" cy="60" r="40" fill="url(#eyeGrad)" />
+                <circle cx="60" cy="60" r="18" fill="#001027" />
+                <circle cx="52" cy="52" r="6" fill="#fff" opacity=".9"/>
+              </svg>
+            </div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-hint">Appuyez sur <kbd>→</kbd> pour commencer</div>
+    </section>
+
+    <!-- ============ SLIDE 2 — CONTEXTE ============ -->
+    <section class="slide" data-slide="2">
+      <div class="slide-header">
+        <span class="slide-tag">02 · Introduction</span>
+        <h2 class="slide-title">Contexte général</h2>
+        <p class="slide-lede">La vision par ordinateur au cœur du contrôle robotique moderne.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="col">
+          <div class="info-card">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 8l4-4h12l4 4v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <h3>Vision par ordinateur</h3>
+            <p>Permettre au robot de <em>percevoir</em> son environnement à partir d’images, comme un œil intelligent qui guide chaque mouvement.</p>
+          </div>
+
+          <div class="info-card">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <h3>Asservissement visuel</h3>
+            <p>Boucle de rétroaction continue : l’image devient le <strong>signal de commande</strong> qui ajuste la position du robot en temps réel.</p>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="config-card">
+            <div class="config-tag">Configuration étudiée</div>
+            <div class="config-title">Caméra embarquée</div>
+            <div class="config-en">Eye-in-hand</div>
+
+            <div class="robot-scene">
+              <svg viewBox="0 0 320 220" class="robot-svg">
+                <!-- base -->
+                <rect x="130" y="180" width="60" height="20" rx="4" fill="#0a2342" stroke="#00d4ff" stroke-width="1.5"/>
+                <!-- arm segment 1 -->
+                <line x1="160" y1="180" x2="160" y2="130" stroke="#00d4ff" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="160" cy="130" r="6" fill="#7df9ff"/>
+                <!-- arm segment 2 -->
+                <line x1="160" y1="130" x2="220" y2="90" stroke="#00d4ff" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="220" cy="90" r="6" fill="#7df9ff"/>
+                <!-- camera -->
+                <rect x="210" y="60" width="40" height="28" rx="4" fill="#0a2342" stroke="#7df9ff" stroke-width="1.5"/>
+                <circle cx="230" cy="74" r="8" fill="#001027" stroke="#7df9ff" stroke-width="1.5"/>
+                <circle cx="230" cy="74" r="3" fill="#7df9ff"/>
+                <!-- vision cone -->
+                <path d="M230 80 L80 200 L380 200 Z" fill="url(#coneGrad)" opacity=".18"/>
+                <defs>
+                  <linearGradient id="coneGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#7df9ff"/>
+                    <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <!-- target -->
+                <circle cx="80" cy="195" r="6" fill="#ff6b9d" class="target-pulse"/>
+              </svg>
+            </div>
+
+            <ul class="check-list">
+              <li>Caméra fixée sur l’organe terminal du robot</li>
+              <li>Vue centrée sur la cible à atteindre</li>
+              <li>Précision élevée pour les tâches fines</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 3 — PROBLÉMATIQUE ============ -->
+    <section class="slide" data-slide="3">
+      <div class="slide-header">
+        <span class="slide-tag tag-warn">03 · Le défi</span>
+        <h2 class="slide-title">Problématique</h2>
+        <p class="slide-lede">Les limites de l’Asservissement Visuel Photométrique (PVS) pur.</p>
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="prob-num">01</div>
+          <h3>Dépendance à la luminosité</h3>
+          <p>L’hypothèse de <strong>constance d’illumination</strong> est rarement vérifiée dans le monde réel.</p>
+          <div class="lum-demo">
+            <div class="lum-cell lum-bright">I = 220</div>
+            <div class="lum-arrow">→</div>
+            <div class="lum-cell lum-dark">I = 80</div>
+          </div>
+        </div>
+
+        <div class="problem-card">
+          <div class="prob-num">02</div>
+          <h3>Variations dynamiques</h3>
+          <p>Changements d’éclairage, ombres mobiles, reflets : la commande devient <strong>instable</strong>.</p>
+          <div class="wave-demo">
+            <svg viewBox="0 0 200 60" class="wave-svg">
+              <path d="M0 30 Q 25 5, 50 30 T 100 30 T 150 30 T 200 30" stroke="#ff6b9d" fill="none" stroke-width="2"/>
+              <path d="M0 30 Q 12 50, 25 30 T 50 30 T 75 30 T 100 30 T 125 30 T 150 30 T 175 30 T 200 30" stroke="#ffd166" fill="none" stroke-width="2" opacity=".7"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="problem-card alert">
+          <div class="prob-num">03</div>
+          <h3>Glare attacks</h3>
+          <p>Vulnérabilité aux <strong>éblouissements</strong> et flashs lumineux qui aveuglent le système.</p>
+          <div class="glare-demo">
+            <div class="glare-flash"></div>
+            <span class="glare-label">⚠ FLASH</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quote-box">
+        <span class="quote-mark">“</span>
+        Comment garantir un asservissement visuel <strong>robuste</strong>
+        face à la réalité photométrique ?
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 4 — OBJECTIFS ============ -->
+    <section class="slide" data-slide="4">
+      <div class="slide-header">
+        <span class="slide-tag tag-success">04 · Notre réponse</span>
+        <h2 class="slide-title">Objectifs &amp; contributions</h2>
+        <p class="slide-lede">Trois axes pour une solution robuste, rapide et adaptative.</p>
+      </div>
+
+      <div class="objectives">
+        <div class="obj-card">
+          <div class="obj-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="obj-step">Étape 01</div>
+          <h3>Décomposition multi-échelle</h3>
+          <p>Améliorer la <strong>robustesse</strong> en séparant l’image en plusieurs niveaux de détail.</p>
+        </div>
+
+        <div class="obj-card highlight">
+          <div class="obj-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="obj-step">Étape 02</div>
+          <h3>DWT-PVS &amp; LWT-PVS</h3>
+          <p>Proposer une variante <strong>Lifting Wavelet Transform</strong> optimisée en calcul, parfaite pour le temps réel.</p>
+        </div>
+
+        <div class="obj-card">
+          <div class="obj-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+          </div>
+          <div class="obj-step">Étape 03</div>
+          <h3>Stratégie Coarse-to-Fine</h3>
+          <p>Intégrer un <strong>Smart Switch</strong> dynamique pour basculer du grossier vers les détails fins.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 5 — IBVS / PBVS / PVS ============ -->
+    <section class="slide" data-slide="5">
+      <div class="slide-header">
+        <span class="slide-tag">05 · Fondements</span>
+        <h2 class="slide-title">Concepts de l’asservissement visuel</h2>
+        <p class="slide-lede">Trois approches, une même mission : guider le robot par l’image.</p>
+      </div>
+
+      <div class="approach-grid">
+        <div class="approach-card">
+          <div class="approach-tag">Approche 1</div>
+          <h3>IBVS</h3>
+          <div class="approach-en">Image-Based Visual Servoing</div>
+          <p>Utilise les <strong>caractéristiques 2D</strong> extraites de l’image (points, lignes…).</p>
+          <div class="approach-illu approach-2d">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+        </div>
+
+        <div class="approach-card">
+          <div class="approach-tag">Approche 2</div>
+          <h3>PBVS</h3>
+          <div class="approach-en">Position-Based Visual Servoing</div>
+          <p>Reconstruit la <strong>pose 3D</strong> de l’objet avant d’asservir.</p>
+          <div class="approach-illu approach-3d">
+            <div class="cube">
+              <div class="face front"></div>
+              <div class="face back"></div>
+              <div class="face right"></div>
+              <div class="face left"></div>
+              <div class="face top"></div>
+              <div class="face bottom"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="approach-card featured">
+          <div class="featured-badge">★ Notre base</div>
+          <div class="approach-tag">Approche 3</div>
+          <h3>PVS</h3>
+          <div class="approach-en">Photometric Visual Servoing</div>
+          <p>Exploite directement les <strong>intensités des pixels</strong>, sans extraction de caractéristiques.</p>
+          <div class="approach-illu approach-px">
+            <div class="px-grid">
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 6 — FOURIER ============ -->
+    <section class="slide" data-slide="6">
+      <div class="slide-header">
+        <span class="slide-tag">06 · Analyse fréquentielle</span>
+        <h2 class="slide-title">Fourier et ses limites</h2>
+        <p class="slide-lede">Pourquoi la transformée de Fourier ne suffit pas pour les images.</p>
+      </div>
+
+      <div class="fourier-layout">
+        <div class="fourier-card">
+          <h3>La transformée de Fourier</h3>
+          <p>Décompose un signal en <strong>fréquences pures</strong> — idéale pour les signaux stationnaires.</p>
+          <svg viewBox="0 0 280 100" class="signal-svg">
+            <path d="M0 50 Q 14 10, 28 50 T 56 50 T 84 50 T 112 50 T 140 50 T 168 50 T 196 50 T 224 50 T 252 50 T 280 50"
+                  stroke="#00d4ff" fill="none" stroke-width="2.4"/>
+          </svg>
+          <div class="formula">F(u,v) = ∫∫ f(x,y) · e<sup>-j2π(ux+vy)</sup> dx dy</div>
+        </div>
+
+        <div class="vs-divider">
+          <span>VS</span>
+        </div>
+
+        <div class="fourier-card warn">
+          <h3>Limite majeure</h3>
+          <p><strong>Aucune localisation spatiale</strong> : on sait qu’une fréquence existe, mais pas <em>où</em>.</p>
+          <svg viewBox="0 0 280 100" class="signal-svg">
+            <path d="M0 50 L 60 50 Q 70 10, 80 50 Q 90 90, 100 50 L 280 50"
+                  stroke="#ff6b9d" fill="none" stroke-width="2.4"/>
+            <line x1="80" y1="10" x2="80" y2="90" stroke="#ffd166" stroke-dasharray="3 3" opacity=".6"/>
+          </svg>
+          <p class="warn-text">Les images sont <strong>non-stationnaires</strong> : contours, textures, zones plates… tout coexiste spatialement.</p>
+        </div>
+      </div>
+
+      <div class="conclusion-strip">
+        <span class="strip-arrow">→</span>
+        Il faut un outil qui voit <strong>à la fois</strong> la fréquence <em>et</em> la position : les <strong>ondelettes</strong>.
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 7 — DWT / LWT ============ -->
+    <section class="slide" data-slide="7">
+      <div class="slide-header">
+        <span class="slide-tag tag-success">07 · La solution</span>
+        <h2 class="slide-title">Ondelettes : DWT &amp; LWT</h2>
+        <p class="slide-lede">Une analyse multi-résolution adaptée aux images.</p>
+      </div>
+
+      <div class="wavelet-grid">
+        <div class="wavelet-card">
+          <div class="wave-header">
+            <h3>DWT</h3>
+            <span class="wave-en">Discrete Wavelet Transform</span>
+          </div>
+          <p>Sépare l’image en :</p>
+          <div class="dwt-blocks">
+            <div class="dwt-block ll">LL<small>tendances<br/>(illumination)</small></div>
+            <div class="dwt-block lh">LH<small>détails H</small></div>
+            <div class="dwt-block hl">HL<small>détails V</small></div>
+            <div class="dwt-block hh">HH<small>détails D<br/>(contours)</small></div>
+          </div>
+          <ul class="check-list">
+            <li>Vue grossière + vue détaillée</li>
+            <li>Robuste aux variations globales</li>
+          </ul>
+        </div>
+
+        <div class="wavelet-card featured">
+          <div class="featured-badge">★ Optimisée</div>
+          <div class="wave-header">
+            <h3>LWT</h3>
+            <span class="wave-en">Lifting Wavelet Transform</span>
+          </div>
+          <p>Optimisation spatiale en 3 étapes :</p>
+          <div class="lwt-pipeline">
+            <div class="lwt-step"><span>1</span>Split</div>
+            <div class="lwt-arrow">▸</div>
+            <div class="lwt-step"><span>2</span>Predict</div>
+            <div class="lwt-arrow">▸</div>
+            <div class="lwt-step"><span>3</span>Update</div>
+          </div>
+          <ul class="check-list">
+            <li>Évite les multiplications complexes</li>
+            <li>Calcul <strong>temps réel</strong> garanti</li>
+            <li>Idéale pour systèmes embarqués</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 8 — MODÉLISATION ============ -->
+    <section class="slide" data-slide="8">
+      <div class="slide-header">
+        <span class="slide-tag">08 · Approche proposée</span>
+        <h2 class="slide-title">Modélisation DWT-PVS &amp; LWT-PVS</h2>
+        <p class="slide-lede">Formulation mathématique de l’erreur dans le domaine ondelette.</p>
+      </div>
+
+      <div class="model-layout">
+        <div class="model-card">
+          <div class="model-step">Étape 1</div>
+          <h3>Calcul de l’erreur photométrique</h3>
+          <p>Au lieu de comparer les pixels bruts, on compare leurs <strong>coefficients d’ondelette</strong>.</p>
+          <div class="formula formula-big">
+            e(t) = W(I*) − W(I(t))
+          </div>
+          <div class="legend">
+            <span><b>W</b> · transformée ondelette</span>
+            <span><b>I*</b> · image désirée</span>
+            <span><b>I(t)</b> · image courante</span>
+          </div>
+        </div>
+
+        <div class="model-card highlight">
+          <div class="model-step">Étape 2 · spécificité LWT</div>
+          <h3>Facteur de normalisation d’énergie</h3>
+          <p>Le LWT introduit un <strong>facteur de normalisation</strong> pour préserver la précision numérique malgré l’absence de multiplications coûteuses.</p>
+          <div class="formula formula-big">
+            e<sub>LWT</sub> = K · ( W<sub>L</sub>(I*) − W<sub>L</sub>(I(t)) )
+          </div>
+          <div class="energy-bar">
+            <div class="energy-fill"></div>
+            <span class="energy-label">Énergie préservée</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 9 — ARCHITECTURE / SMART SWITCH ============ -->
+    <section class="slide" data-slide="9">
+      <div class="slide-header">
+        <span class="slide-tag tag-success">09 · Architecture</span>
+        <h2 class="slide-title">Boucle de contrôle &amp; Smart Switch</h2>
+        <p class="slide-lede">Schéma temps réel · ViSP · 25 FPS · Te = 0.04 s</p>
+      </div>
+
+      <div class="loop-diagram">
+        <div class="loop-node node-target">
+          <div class="node-icon">🎯</div>
+          <div class="node-label">Image désirée<br/><small>I*</small></div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-error">
+          <div class="node-icon">∑</div>
+          <div class="node-label">Erreur ondelette<br/><small>e(t)</small></div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-switch">
+          <div class="switch-badge">★ Smart Switch</div>
+          <div class="node-icon">⇄</div>
+          <div class="node-label">Coarse → Fine</div>
+          <div class="switch-states">
+            <span class="state state-low">Low-Low</span>
+            <span class="state-arrow">→</span>
+            <span class="state state-high">High-Freq</span>
+          </div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-control">
+          <div class="node-icon">⚙</div>
+          <div class="node-label">Loi de commande<br/><small>v(t)</small></div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-robot">
+          <div class="node-icon">🤖</div>
+          <div class="node-label">Robot<br/><small>Eye-in-hand</small></div>
+        </div>
+
+        <div class="feedback-line">
+          <span>← Image courante I(t) · 25 FPS</span>
+        </div>
+      </div>
+
+      <div class="features-row">
+        <div class="feat">
+          <div class="feat-num">25</div>
+          <div class="feat-unit">FPS</div>
+          <div class="feat-label">Cadence temps réel</div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">0.04</div>
+          <div class="feat-unit">s</div>
+          <div class="feat-label">Période d’échantillonnage</div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">★</div>
+          <div class="feat-unit">Sécurité</div>
+          <div class="feat-label">Saturation des vitesses</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 10 — CONCLUSION + Q&A ============ -->
+    <section class="slide slide-end" data-slide="10">
+      <div class="end-content">
+        <div class="end-chip">
+          <span class="chip-pulse"></span>
+          Conclusion
+        </div>
+        <h2 class="end-title">Une vision plus <span class="shine">robuste</span>,<br/>une commande plus <span class="shine">intelligente</span>.</h2>
+
+        <div class="takeaways">
+          <div class="take">
+            <div class="take-icon">✦</div>
+            <strong>DWT-PVS &amp; LWT-PVS</strong>
+            <span>Robustesse photométrique prouvée par décomposition multi-échelle.</span>
+          </div>
+          <div class="take">
+            <div class="take-icon">⚡</div>
+            <strong>Lifting Transform</strong>
+            <span>Calcul temps réel optimisé pour systèmes embarqués.</span>
+          </div>
+          <div class="take">
+            <div class="take-icon">⇄</div>
+            <strong>Smart Switch</strong>
+            <span>Stratégie Coarse-to-Fine adaptative et sûre.</span>
+          </div>
+        </div>
+
+        <div class="thanks">
+          <h3>Merci pour votre attention</h3>
+          <p>Place aux <strong>questions &amp; discussion</strong></p>
+        </div>
+
+        <div class="end-signatures">
+          <span>ABBOU Ahmed Mohammed</span>
+          <span class="dot-sep">•</span>
+          <span>KHEROUAA Alaa Eddine</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom dots navigation -->
+  <nav class="dots-nav" id="dotsNav"></nav>
+
+  <script src="presentation.js"></script>
+</body>
+</html>
