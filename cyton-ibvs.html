@@ -139,7 +139,22 @@
 
   /* Center column - 3D viewport */
   .center { position: relative; min-height: 0; }
-  #threeView { width: 100%; height: 100%; display: block; background: radial-gradient(800px 500px at 50% 30%, #1a2230, #0b0f14); }
+  .viewport-host {
+    position: absolute; inset: 38px 0 0 0;
+    background: radial-gradient(800px 500px at 50% 30%, #1a2230, #0b0f14);
+  }
+  #threeView { width: 100%; height: 100%; display: block; }
+  .err-overlay {
+    position: absolute; inset: 0; display: none; align-items: center;
+    justify-content: center; background: rgba(11,15,20,0.92);
+    color: var(--err); padding: 20px; text-align: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px;
+    z-index: 5; flex-direction: column; gap: 10px;
+  }
+  .err-overlay.show { display: flex; }
+  .err-overlay h4 { color: var(--err); margin: 0; font-size: 14px; }
+  .err-overlay pre { margin: 0; max-width: 80%; white-space: pre-wrap;
+    color: var(--muted); font-size: 11px; text-align: left; }
   .viewport-overlay {
     position: absolute; top: 12px; left: 12px;
     display: flex; flex-direction: column; gap: 6px; pointer-events: none;
@@ -277,7 +292,14 @@
     <!-- CENTER 3D VIEWPORT -->
     <div class="panel center">
       <h3>3D Workspace <span class="badge" id="cameraBadge">Eye-in-Hand</span></h3>
-      <canvas id="threeView"></canvas>
+      <div class="viewport-host">
+        <canvas id="threeView"></canvas>
+        <div class="err-overlay" id="errOverlay">
+          <h4>3D viewport error</h4>
+          <pre id="errMsg"></pre>
+          <div style="color:var(--muted);font-size:11px">Check the browser console for details.</div>
+        </div>
+      </div>
       <div class="viewport-overlay">
         <div class="telemetry">
           End-Effector: <b id="eePos">x=0.000  y=0.000  z=0.000</b>
@@ -327,6 +349,22 @@
     </div>
   </div>
 
+<script>
+window.__showFatalError = function(msg) {
+  const el = document.getElementById('errOverlay');
+  const m  = document.getElementById('errMsg');
+  if (!el || !m) { alert('3D error: ' + msg); return; }
+  m.textContent = msg;
+  el.classList.add('show');
+  console.error('[CytonIBVS]', msg);
+};
+window.addEventListener('error', (e) => {
+  if (e && e.message) window.__showFatalError(e.message + '\n' + (e.filename||''));
+});
+window.addEventListener('unhandledrejection', (e) => {
+  window.__showFatalError('Unhandled promise: ' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
+</script>
 <script type="importmap">
 {
   "imports": {
@@ -336,16 +374,24 @@
 }
 </script>
 <script type="module">
-// ============================================================
-// Cyton Gamma 300 - IBVS Visual Servoing Simulator
-// 7-DOF manipulator with eye-in-hand image-based visual servoing
-// ============================================================
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+let THREE, OrbitControls;
+try {
+  THREE = await import('three');
+  ({ OrbitControls } = await import('three/addons/controls/OrbitControls.js'));
+} catch (err) {
+  window.__showFatalError('Failed to load Three.js from CDN.\n' + (err && err.message ? err.message : err));
+  throw err;
+}
 
 // ----------- THREE.js scene ---------------------------------
 const canvas3D = document.getElementById('threeView');
-const renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true });
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true });
+} catch (err) {
+  window.__showFatalError('WebGL not available: ' + (err && err.message ? err.message : err));
+  throw err;
+}
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1383,13 +1429,21 @@ let lastT = performance.now();
 let fpsAcc = 0, fpsCount = 0;
 
 function resize() {
-  const r = canvas3D.getBoundingClientRect();
-  renderer.setSize(r.width, r.height, false);
-  camera.aspect = r.width / r.height;
+  const host = canvas3D.parentElement;
+  const w = Math.max(1, host.clientWidth);
+  const h = Math.max(1, host.clientHeight);
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+// Also use ResizeObserver because flex layout sizes settle after first paint
+const ro = new ResizeObserver(resize);
+ro.observe(canvas3D.parentElement);
 resize();
+// Force an extra resize on the next frames in case layout is still changing
+requestAnimationFrame(resize);
+setTimeout(resize, 100);
 
 function renderEyeView() {
   // Render scene from eye-in-hand camera into render target
