@@ -1,6 +1,6 @@
 /* =====================================================
-   PRESENTATION — Direct Visual Servoing
-   Premium navigation : keyboard, click, swipe, dots, rail
+   PRESENTATION — Direct Visual Servoing using Multiscale Decomposition
+   Navigation : keyboard, click, swipe, dots
    ===================================================== */
 
 (function () {
@@ -14,50 +14,20 @@
   const navPrev      = document.getElementById('navPrev');
   const navNext      = document.getElementById('navNext');
   const dotsNav      = document.getElementById('dotsNav');
-  const rail         = document.getElementById('chapterRail');
-  const railItems    = rail ? Array.from(rail.querySelectorAll('li')) : [];
 
   let current = 0;
   let isAnimating = false;
 
   // ---------- init dots ----------
-  totalEl.textContent = String(totalSlides).padStart(2, '0');
+  totalEl.textContent = totalSlides;
   slides.forEach((_, i) => {
     const dot = document.createElement('button');
     dot.className = 'dot' + (i === 0 ? ' active' : '');
-    dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+    dot.setAttribute('aria-label', `Aller à la slide ${i + 1}`);
     dot.addEventListener('click', () => goTo(i));
     dotsNav.appendChild(dot);
   });
   const dots = Array.from(document.querySelectorAll('.dot'));
-
-  // mark first rail item active
-  if (railItems[0]) railItems[0].classList.add('active');
-  // bind rail clicks
-  railItems.forEach((li) => {
-    const target = parseInt(li.dataset.target, 10) - 1;
-    li.addEventListener('click', () => goTo(target));
-  });
-
-  // ---------- count-up animation ----------
-  function animateCounters(slide) {
-    const counters = slide.querySelectorAll('[data-count]');
-    counters.forEach((el) => {
-      const target = parseFloat(el.dataset.count);
-      const decimals = parseInt(el.dataset.decimals || '0', 10);
-      const duration = 1400;
-      const start = performance.now();
-      const startVal = 0;
-      function step(now) {
-        const t = Math.min((now - start) / duration, 1);
-        const eased = 1 - Math.pow(1 - t, 3); // ease out cubic
-        const v = startVal + (target - startVal) * eased;
-        el.textContent = decimals > 0 ? v.toFixed(decimals) : Math.round(v).toString();
-        if (t < 1) requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-    });
-  }
 
   // ---------- navigation ----------
   function goTo(index) {
@@ -67,16 +37,14 @@
     isAnimating = true;
     slides[current].classList.remove('active');
     dots[current].classList.remove('active');
-    if (railItems[current]) railItems[current].classList.remove('active');
 
     current = index;
 
     slides[current].classList.add('active');
     dots[current].classList.add('active');
-    if (railItems[current]) railItems[current].classList.add('active');
 
     // counter + progress
-    currentEl.textContent = String(current + 1).padStart(2, '0');
+    currentEl.textContent = current + 1;
     const pct = ((current + 1) / totalSlides) * 100;
     progressFill.style.width = pct + '%';
 
@@ -87,10 +55,7 @@
     // reset scroll inside the slide
     slides[current].scrollTop = 0;
 
-    // trigger count-up animations on reveal
-    setTimeout(() => animateCounters(slides[current]), 300);
-
-    setTimeout(() => { isAnimating = false; }, 700);
+    setTimeout(() => { isAnimating = false; }, 600);
   }
 
   function next() { goTo(current + 1); }
@@ -99,9 +64,6 @@
   navPrev.addEventListener('click', prev);
   navNext.addEventListener('click', next);
   navPrev.disabled = true;
-
-  // run counters on first slide too
-  setTimeout(() => animateCounters(slides[0]), 300);
 
   // ---------- keyboard ----------
   document.addEventListener('keydown', (e) => {
@@ -114,6 +76,7 @@
     } else if (e.key === 'End') {
       e.preventDefault(); goTo(totalSlides - 1);
     } else if (e.key === 'f' || e.key === 'F') {
+      // fullscreen toggle
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen?.();
       } else {
@@ -129,6 +92,7 @@
   // ---------- mouse wheel (debounced) ----------
   let wheelTimeout = null;
   document.addEventListener('wheel', (e) => {
+    // ignore if scrolling inside a long slide
     const target = e.target.closest('.slide');
     if (target && target.scrollHeight > target.clientHeight + 5) return;
 
@@ -137,7 +101,7 @@
 
     if (e.deltaY > 0) next(); else prev();
 
-    wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 800);
+    wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 700);
   }, { passive: true });
 
   // ---------- touch swipe ----------
@@ -155,6 +119,9 @@
     }
   }, { passive: true });
 
+  // ---------- click on edges (presentation feeling) ----------
+  // disabled to avoid conflicts with interactive elements
+
   // ---------- mouse parallax on hero visual ----------
   const heroVisual = document.querySelector('.hero-visual');
   if (heroVisual) {
@@ -165,13 +132,16 @@
       const dx = (e.clientX - cx) / cx;
       const dy = (e.clientY - cy) / cy;
       heroVisual.style.transform =
-        `translate(${dx * 14}px, ${dy * 14}px)`;
+        `translate(${dx * 12}px, ${dy * 12}px)`;
     });
   }
+
+  // ---------- prevent context menu on background ----------
+  // (kept default — useful for screenshots)
 
   // ---------- init progress ----------
   progressFill.style.width = (1 / totalSlides * 100) + '%';
 
-  // ---------- expose API ----------
+  // ---------- expose minimal API for debugging ----------
   window.__presentation = { goTo, next, prev, get current() { return current; } };
 })();
