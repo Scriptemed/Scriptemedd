@@ -231,6 +231,7 @@ body {
           <button class="btn btn-primary" style="width:100%">Upload Desired Image</button>
           <input type="file" id="desired-image-input" accept="image/*">
         </div>
+        <p style="font-size:10px;color:#888;margin:4px 0 0 0;line-height:1.3;">Note: The uploaded image is shown as a visual reference on the table. The servo target is defined by predefined feature points.</p>
         <div class="lambda-control">
           <label>Lambda (Gain): <span id="lambda-val">0.6</span></label>
           <input type="range" id="lambda-slider" min="0.1" max="2.0" step="0.05" value="0.6">
@@ -661,101 +662,180 @@ const gripperMesh = createMesh(createBox(0.008, 0.04, 0.015));
 const tableMesh = createMesh(createPlane(0.6, 0.6));
 const floorMesh = createMesh(createPlane(2.0, 2.0));
 
+// ===== PRE-ALLOCATED MATRIX POOL (Fix 5: eliminate per-frame GC pressure) =====
+const _matPool = [];
+const _matPoolSize = 40;
+for (let i = 0; i < _matPoolSize; i++) _matPool.push(new Float32Array(16));
+let _matPoolIdx = 0;
+function poolMat() {
+  const m = _matPool[_matPoolIdx % _matPoolSize];
+  _matPoolIdx++;
+  return m;
+}
+function poolReset() { _matPoolIdx = 0; }
+
+// Pre-allocated transform output arrays for FK (9 transforms)
+const _fkTransforms = [];
+for (let i = 0; i < 9; i++) _fkTransforms.push(new Float32Array(16));
+
 // ===== FORWARD KINEMATICS =====
 function computeFK(angles) {
-  const transforms = [];
-  let current = M4.identity(M4.create());
+  poolReset();
+  const transforms = _fkTransforms;
+  const current = poolMat();
+  M4.identity(current);
 
   // Base
-  const baseT = M4.create();
+  const baseT = poolMat();
   M4.translate(baseT, [0, 0, 0]);
   M4.multiply(current, current, baseT);
-  transforms.push(Float32Array.from(current));
+  transforms[0].set(current);
 
   // Joint 1: base rotation around Y
-  const t1 = M4.create(); M4.translate(t1, [0, linkLengths[0], 0]);
+  const t1 = poolMat(); M4.translate(t1, [0, linkLengths[0], 0]);
   M4.multiply(current, current, t1);
-  const r1 = M4.create(); M4.rotateY(r1, angles[0]);
+  const r1 = poolMat(); M4.rotateY(r1, angles[0]);
   M4.multiply(current, current, r1);
-  transforms.push(Float32Array.from(current));
+  transforms[1].set(current);
 
   // Joint 2: shoulder pitch around X
-  const t2 = M4.create(); M4.translate(t2, [0, linkLengths[1], 0]);
+  const t2 = poolMat(); M4.translate(t2, [0, linkLengths[1], 0]);
   M4.multiply(current, current, t2);
-  const r2 = M4.create(); M4.rotateX(r2, angles[1]);
+  const r2 = poolMat(); M4.rotateX(r2, angles[1]);
   M4.multiply(current, current, r2);
-  transforms.push(Float32Array.from(current));
+  transforms[2].set(current);
 
   // Joint 3: elbow rotation around Y
-  const t3 = M4.create(); M4.translate(t3, [0, linkLengths[2], 0]);
+  const t3 = poolMat(); M4.translate(t3, [0, linkLengths[2], 0]);
   M4.multiply(current, current, t3);
-  const r3 = M4.create(); M4.rotateY(r3, angles[2]);
+  const r3 = poolMat(); M4.rotateY(r3, angles[2]);
   M4.multiply(current, current, r3);
-  transforms.push(Float32Array.from(current));
+  transforms[3].set(current);
 
   // Joint 4: elbow pitch around X
-  const t4 = M4.create(); M4.translate(t4, [0, linkLengths[3], 0]);
+  const t4 = poolMat(); M4.translate(t4, [0, linkLengths[3], 0]);
   M4.multiply(current, current, t4);
-  const r4 = M4.create(); M4.rotateX(r4, angles[3]);
+  const r4 = poolMat(); M4.rotateX(r4, angles[3]);
   M4.multiply(current, current, r4);
-  transforms.push(Float32Array.from(current));
+  transforms[4].set(current);
 
   // Joint 5: wrist rotation around Y
-  const t5 = M4.create(); M4.translate(t5, [0, linkLengths[4], 0]);
+  const t5 = poolMat(); M4.translate(t5, [0, linkLengths[4], 0]);
   M4.multiply(current, current, t5);
-  const r5 = M4.create(); M4.rotateY(r5, angles[4]);
+  const r5 = poolMat(); M4.rotateY(r5, angles[4]);
   M4.multiply(current, current, r5);
-  transforms.push(Float32Array.from(current));
+  transforms[5].set(current);
 
   // Joint 6: wrist pitch around X
-  const t6 = M4.create(); M4.translate(t6, [0, linkLengths[5], 0]);
+  const t6 = poolMat(); M4.translate(t6, [0, linkLengths[5], 0]);
   M4.multiply(current, current, t6);
-  const r6 = M4.create(); M4.rotateX(r6, angles[5]);
+  const r6 = poolMat(); M4.rotateX(r6, angles[5]);
   M4.multiply(current, current, r6);
-  transforms.push(Float32Array.from(current));
+  transforms[6].set(current);
 
   // Joint 7: EE rotation around Y
-  const t7 = M4.create(); M4.translate(t7, [0, linkLengths[6], 0]);
+  const t7 = poolMat(); M4.translate(t7, [0, linkLengths[6], 0]);
   M4.multiply(current, current, t7);
-  const r7 = M4.create(); M4.rotateY(r7, angles[6]);
+  const r7 = poolMat(); M4.rotateY(r7, angles[6]);
   M4.multiply(current, current, r7);
-  transforms.push(Float32Array.from(current));
+  transforms[7].set(current);
 
   // End-effector tip
-  const tEE = M4.create(); M4.translate(tEE, [0, linkLengths[7], 0]);
+  const tEE = poolMat(); M4.translate(tEE, [0, linkLengths[7], 0]);
   M4.multiply(current, current, tEE);
-  transforms.push(Float32Array.from(current));
+  transforms[8].set(current);
 
   return transforms;
 }
 
+// Separate EE pose computation with its own pool to avoid conflicts with render-loop FK
+const _eePoolMats = [];
+for (let i = 0; i < 20; i++) _eePoolMats.push(new Float32Array(16));
 function getEndEffectorPose(angles) {
-  const transforms = computeFK(angles);
-  return transforms[transforms.length - 1];
+  let pidx = 0;
+  function pm() { return _eePoolMats[pidx++ % 20]; }
+
+  const current = pm();
+  M4.identity(current);
+
+  const steps = [
+    [0, 'Y'], [1, 'X'], [2, 'Y'], [3, 'X'], [4, 'Y'], [5, 'X'], [6, 'Y']
+  ];
+  // Base translate
+  const bt = pm(); M4.translate(bt, [0, 0, 0]);
+  M4.multiply(current, current, bt);
+
+  for (let i = 0; i < 7; i++) {
+    const t = pm(); M4.translate(t, [0, linkLengths[i], 0]);
+    M4.multiply(current, current, t);
+    const r = pm();
+    if (steps[i][1] === 'Y') M4.rotateY(r, angles[i]);
+    else M4.rotateX(r, angles[i]);
+    M4.multiply(current, current, r);
+  }
+  // EE tip
+  const tEE = pm(); M4.translate(tEE, [0, linkLengths[7], 0]);
+  M4.multiply(current, current, tEE);
+
+  // Return a copy since pool is reused
+  const result = new Float32Array(16);
+  result.set(current);
+  return result;
 }
 
 // ===== ROBOT JACOBIAN =====
+// Pre-allocated temporaries for Jacobian computation
+const _jacR0 = new Float32Array(9);
+const _jacRp = new Float32Array(9);
+const _jacDeltaR = new Float32Array(9);
+
 function computeJacobian(angles) {
-  // Numerical Jacobian (6x7): maps joint velocities to end-effector twist
+  // Numerical Jacobian (6x7): maps joint velocities to end-effector twist (world frame)
   const eps = 0.0001;
   const J = [];
   const T0 = getEndEffectorPose(angles);
   const p0 = [T0[12], T0[13], T0[14]];
 
+  // Extract 3x3 rotation from T0 (column-major 4x4)
+  _jacR0[0]=T0[0]; _jacR0[1]=T0[1]; _jacR0[2]=T0[2];
+  _jacR0[3]=T0[4]; _jacR0[4]=T0[5]; _jacR0[5]=T0[6];
+  _jacR0[6]=T0[8]; _jacR0[7]=T0[9]; _jacR0[8]=T0[10];
+
   for (let i = 0; i < 7; i++) {
     const anglesP = angles.slice();
     anglesP[i] += eps;
     const Tp = getEndEffectorPose(anglesP);
+
+    // Linear velocity column
     const dp = [(Tp[12] - p0[0]) / eps, (Tp[13] - p0[1]) / eps, (Tp[14] - p0[2]) / eps];
-    // Approximate angular velocity column from rotation difference
-    const dR = [
-      (Tp[6] - T0[6]) / eps,  // approximate wx
-      (Tp[8] - T0[8]) / eps,  // approximate wy
-      (Tp[1] - T0[1]) / eps   // approximate wz
-    ];
-    J.push([dp[0], dp[1], dp[2], dR[0], dR[1], dR[2]]);
+
+    // Extract Rp from Tp (column-major 4x4)
+    _jacRp[0]=Tp[0]; _jacRp[1]=Tp[1]; _jacRp[2]=Tp[2];
+    _jacRp[3]=Tp[4]; _jacRp[4]=Tp[5]; _jacRp[5]=Tp[6];
+    _jacRp[6]=Tp[8]; _jacRp[7]=Tp[9]; _jacRp[8]=Tp[10];
+
+    // Compute deltaR = Rp * R0^T (both are 3x3, row-major in our _jac arrays)
+    // deltaR[i][j] = sum_k Rp[i][k] * R0[j][k]  (R0^T column k = R0 row k)
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 3; col++) {
+        let s = 0;
+        for (let k = 0; k < 3; k++) s += _jacRp[row*3+k] * _jacR0[col*3+k];
+        _jacDeltaR[row*3+col] = s;
+      }
+    }
+
+    // Extract angular velocity from skew-symmetric part: (deltaR - deltaR^T) / 2
+    // wx = (deltaR[2][1] - deltaR[1][2]) / 2
+    // wy = (deltaR[0][2] - deltaR[2][0]) / 2
+    // wz = (deltaR[1][0] - deltaR[0][1]) / 2
+    // Then divide by eps for rate
+    const wx = (_jacDeltaR[2*3+1] - _jacDeltaR[1*3+2]) / (2 * eps);
+    const wy = (_jacDeltaR[0*3+2] - _jacDeltaR[2*3+0]) / (2 * eps);
+    const wz = (_jacDeltaR[1*3+0] - _jacDeltaR[0*3+1]) / (2 * eps);
+
+    J.push([dp[0], dp[1], dp[2], wx, wy, wz]);
   }
-  // J is stored as columns, need to return as 6x7 matrix (row-major)
+  // J is stored as columns, return as 6x7 matrix (row-major)
   const Jmat = [];
   for (let r = 0; r < 6; r++) {
     const row = [];
@@ -767,29 +847,96 @@ function computeJacobian(angles) {
   return Jmat;
 }
 
+// ===== CAMERA-TO-WORLD FRAME ROTATION (Fix 2) =====
+// The interaction matrix produces velocity in camera frame where:
+//   camera optical axis = arm local -Y
+//   camera x-axis = arm local X
+//   camera y-axis = arm local Z
+// The robot Jacobian expects world-frame twist.
+// We need to rotate camera-frame velocity to world frame using the EE rotation.
+function rotateCamVelToWorld(camVel, eePose) {
+  // Extract the 3x3 rotation from the EE pose (column-major 4x4)
+  // The camera frame convention: camera Z (depth) maps to arm -Y
+  // camera X maps to arm X, camera Y maps to arm Z
+  // So the camera-to-EE rotation is: [1 0 0; 0 0 -1; 0 1 0] applied first,
+  // then the EE rotation maps EE-frame to world.
+  //
+  // Camera frame velocity (vx_c, vy_c, vz_c) where vz_c is along optical axis (depth = -Y in arm)
+  // maps to EE-local frame as: vx_ee = vx_c, vy_ee = -vz_c, vz_ee = vy_c
+  // Then rotate by EE's world rotation to get world-frame velocity.
+
+  // First remap camera velocity to EE-local frame
+  const vx_ee = camVel[0];
+  const vy_ee = -camVel[2]; // camera depth (-Y in arm) -> negated to arm Y direction
+  const vz_ee = camVel[1];
+
+  const wx_ee = camVel[3];
+  const wy_ee = -camVel[5];
+  const wz_ee = camVel[4];
+
+  // Rotate from EE-local to world using EE rotation matrix (column-major in eePose)
+  // R column 0: eePose[0,1,2], column 1: eePose[4,5,6], column 2: eePose[8,9,10]
+  const R00=eePose[0], R10=eePose[1], R20=eePose[2];
+  const R01=eePose[4], R11=eePose[5], R21=eePose[6];
+  const R02=eePose[8], R12=eePose[9], R22=eePose[10];
+
+  const worldVel = [
+    R00*vx_ee + R01*vy_ee + R02*vz_ee, // vx world
+    R10*vx_ee + R11*vy_ee + R12*vz_ee, // vy world
+    R20*vx_ee + R21*vy_ee + R22*vz_ee, // vz world
+    R00*wx_ee + R01*wy_ee + R02*wz_ee, // wx world
+    R10*wx_ee + R11*wy_ee + R12*wz_ee, // wy world
+    R20*wx_ee + R21*wy_ee + R22*wz_ee  // wz world
+  ];
+  return worldVel;
+}
+
 // ===== LINEAR ALGEBRA FOR IBVS =====
 function pseudoInverse(M, rows, cols) {
-  // Simple pseudo-inverse using SVD-free approach: pinv(M) = M^T * (M * M^T)^-1
-  // For a fat matrix (rows < cols), or use transpose for thin
-  // Using damped least squares for stability
-  const lambda2 = 0.001;
-  const MtM = [];
-  // M^T * M (cols x cols)
-  for (let i = 0; i < cols; i++) {
-    MtM.push([]);
-    for (let j = 0; j < cols; j++) {
+  // Damped least squares pseudo-inverse: pinv(M) = M^T * (M * M^T + lambda^2 * I)^-1
+  // (Fix 6) Adaptive damping: estimate condition from diagonal of M*M^T
+  const baseDamping = 0.01; // Increased from 0.001 for better stability near singularities
+
+  // Compute M * M^T (rows x rows)
+  const MMt = [];
+  for (let i = 0; i < rows; i++) {
+    MMt.push([]);
+    for (let j = 0; j < rows; j++) {
       let sum = 0;
-      for (let k = 0; k < rows; k++) sum += M[k][i] * M[k][j];
-      if (i === j) sum += lambda2;
-      MtM[i].push(sum);
+      for (let k = 0; k < cols; k++) sum += M[i][k] * M[j][k];
+      MMt[i].push(sum);
     }
   }
-  // Invert MtM using Gauss-Jordan
-  const n = cols;
+
+  // Estimate singular value spread via diagonal min/max as condition proxy
+  let diagMin = Infinity, diagMax = 0;
+  for (let i = 0; i < rows; i++) {
+    const d = MMt[i][i];
+    if (d < diagMin) diagMin = d;
+    if (d > diagMax) diagMax = d;
+  }
+  // Adaptive: scale damping up when condition is poor (diagMin near zero relative to diagMax)
+  let lambda2 = baseDamping;
+  if (diagMax > 1e-10) {
+    const condEstimate = diagMin / diagMax;
+    // When condEstimate is small (near singularity), increase damping
+    if (condEstimate < 0.01) {
+      lambda2 = baseDamping * (0.01 / Math.max(condEstimate, 1e-8));
+      lambda2 = Math.min(lambda2, 1.0); // cap damping
+    }
+  }
+
+  // Add damping to diagonal
+  for (let i = 0; i < rows; i++) {
+    MMt[i][i] += lambda2;
+  }
+
+  // Invert MMt using Gauss-Jordan
+  const n = rows;
   const aug = [];
   for (let i = 0; i < n; i++) {
     aug.push([]);
-    for (let j = 0; j < n; j++) aug[i].push(MtM[i][j]);
+    for (let j = 0; j < n; j++) aug[i].push(MMt[i][j]);
     for (let j = 0; j < n; j++) aug[i].push(i === j ? 1 : 0);
   }
   for (let i = 0; i < n; i++) {
@@ -811,13 +958,13 @@ function pseudoInverse(M, rows, cols) {
   for (let i = 0; i < n; i++) {
     inv.push(aug[i].slice(n));
   }
-  // pinv = inv(M^T*M) * M^T  => cols x rows
+  // pinv = M^T * inv(M*M^T + lambda^2*I) => cols x rows
   const pinv = [];
   for (let i = 0; i < cols; i++) {
     pinv.push([]);
     for (let j = 0; j < rows; j++) {
       let sum = 0;
-      for (let k = 0; k < cols; k++) sum += inv[i][k] * M[j][k];
+      for (let k = 0; k < rows; k++) sum += M[k][i] * inv[j][k];
       pinv[i].push(sum);
     }
   }
@@ -850,7 +997,7 @@ function getDesiredPoints3D() {
 
 // Pinhole camera projection
 function projectPoint(point3D, cameraPose) {
-  // cameraPose is 4x4 matrix. Camera looks along local -Z, up is Y
+  // cameraPose is 4x4 matrix. Camera looks along local -Y (arm convention), up is Z
   const invCam = M4.create();
   M4.invert(invCam, cameraPose);
   // Transform point to camera space
@@ -862,7 +1009,8 @@ function projectPoint(point3D, cameraPose) {
   // Camera looks along -Y in our model (since arm extends along Y)
   // Remap: image x = p.x / (-p.y), image y = p.z / (-p.y)
   const Z = -p[1]; // depth along camera viewing axis
-  if (Z < 0.001) return null;
+  // (Fix 3) Raised depth floor from 0.001 to 0.05 to prevent extreme projections
+  if (Z < 0.05) return null;
   return { x: p[0] / Z, y: p[2] / Z, Z: Z };
 }
 
@@ -893,10 +1041,12 @@ function ibvsStep(dt) {
 
   // Project points onto current camera
   currentFeatures = [];
+  let minDepth = Infinity;
   for (const p of points3D) {
     const proj = projectPoint(p, eePose);
     if (!proj) { ibvsRunning = false; updateStatus('Idle'); return; }
     currentFeatures.push(proj);
+    if (proj.Z < minDepth) minDepth = proj.Z;
   }
 
   // Compute error s - s*
@@ -917,29 +1067,38 @@ function ibvsStep(dt) {
     return;
   }
 
+  // (Fix 3) Attenuate lambda when depth is below 0.1 to prevent extreme velocities
+  let effectiveLambda = lambda;
+  if (minDepth < 0.1) {
+    effectiveLambda *= (minDepth / 0.1);
+  }
+
   // Interaction matrix (8x6)
   const L = computeInteractionMatrix(currentFeatures);
 
   // Pseudo-inverse of L: 6x8
   const Lpinv = pseudoInverse(L, 8, 6);
 
-  // Camera velocity: v = -lambda * Lpinv * error
+  // Camera velocity: v = -lambda * Lpinv * error (in camera frame)
   const camVel = [];
   for (let i = 0; i < 6; i++) {
     let sum = 0;
     for (let j = 0; j < 8; j++) sum += Lpinv[i][j] * error[j];
-    camVel.push(-lambda * sum);
+    camVel.push(-effectiveLambda * sum);
   }
+
+  // (Fix 2) Rotate camera-frame velocity to world frame before applying robot Jacobian
+  const worldVel = rotateCamVelToWorld(camVel, eePose);
 
   // Robot Jacobian (6x7)
   const J = computeJacobian(jointAngles);
 
-  // Joint velocities: dq = pinv(J) * camVel
+  // Joint velocities: dq = pinv(J) * worldVel
   const Jpinv = pseudoInverse(J, 6, 7);
   const dq = [];
   for (let i = 0; i < 7; i++) {
     let sum = 0;
-    for (let j = 0; j < 6; j++) sum += Jpinv[i][j] * camVel[j];
+    for (let j = 0; j < 6; j++) sum += Jpinv[i][j] * worldVel[j];
     dq.push(sum);
   }
 
