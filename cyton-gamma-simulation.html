@@ -533,6 +533,25 @@ void main() {
   gl_FragColor = vec4(col, 1.0);
 }`;
 
+// Textured shader for rendering uploaded image on the table
+const vsTexSource = `
+attribute vec3 aPosition;
+attribute vec2 aTexCoord;
+uniform mat4 uMVP;
+varying vec2 vTexCoord;
+void main() {
+  vTexCoord = aTexCoord;
+  gl_Position = uMVP * vec4(aPosition, 1.0);
+}`;
+
+const fsTexSource = `
+precision mediump float;
+varying vec2 vTexCoord;
+uniform sampler2D uTexture;
+void main() {
+  gl_FragColor = texture2D(uTexture, vTexCoord);
+}`;
+
 function compileShader(src, type) {
   const s = gl.createShader(type);
   gl.shaderSource(s, src);
@@ -560,6 +579,19 @@ const uColor = gl.getUniformLocation(program, 'uColor');
 const uLightDir = gl.getUniformLocation(program, 'uLightDir');
 const uEyePos = gl.getUniformLocation(program, 'uEyePos');
 
+// Textured shader program
+const vsTex = compileShader(vsTexSource, gl.VERTEX_SHADER);
+const fsTex = compileShader(fsTexSource, gl.FRAGMENT_SHADER);
+const texProgram = gl.createProgram();
+gl.attachShader(texProgram, vsTex);
+gl.attachShader(texProgram, fsTex);
+gl.linkProgram(texProgram);
+
+const aTexPosition = gl.getAttribLocation(texProgram, 'aPosition');
+const aTexCoord = gl.getAttribLocation(texProgram, 'aTexCoord');
+const uTexMVP = gl.getUniformLocation(texProgram, 'uMVP');
+const uTexSampler = gl.getUniformLocation(texProgram, 'uTexture');
+
 gl.enable(gl.DEPTH_TEST);
 gl.enable(gl.CULL_FACE);
 gl.clearColor(0.06, 0.06, 0.12, 1.0);
@@ -575,6 +607,66 @@ function createMesh(geom) {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geom.indices, gl.STATIC_DRAW);
   return { vbo, nbo, ibo, count: geom.indices.length };
+}
+
+// Create a textured plane mesh (with UV coordinates)
+function createTexturedPlane(w, d) {
+  const hw = w/2, hd = d/2;
+  const vertices = new Float32Array([-hw, 0, -hd, hw, 0, -hd, hw, 0, hd, -hw, 0, hd]);
+  const texCoords = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
+  const indices = new Uint16Array([0, 2, 1, 0, 3, 2]);
+  const vbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+  const tbo = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, tbo);
+  gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
+  const ibo = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+  return { vbo, tbo, ibo, count: indices.length };
+}
+
+// Table image texture state
+let tableTexture = null;
+let tableTexPlane = null;
+
+function createTableTexture(img) {
+  if (tableTexture) gl.deleteTexture(tableTexture);
+  tableTexture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tableTexture);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.bindTexture(gl.TEXTURE_2D, null);
+  if (!tableTexPlane) {
+    tableTexPlane = createTexturedPlane(tableSize, tableSize);
+  }
+}
+
+function drawTexturedMesh(mesh, modelMatrix, texture, vpMatrix) {
+  gl.useProgram(texProgram);
+  const mvp = M4.create();
+  M4.multiply(mvp, vpMatrix, modelMatrix);
+  gl.uniformMatrix4fv(uTexMVP, false, mvp);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.uniform1i(uTexSampler, 0);
+  // Disable attribs from the lit shader that may conflict
+  gl.disableVertexAttribArray(aNormal);
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.vbo);
+  gl.enableVertexAttribArray(aTexPosition);
+  gl.vertexAttribPointer(aTexPosition, 3, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, mesh.tbo);
+  gl.enableVertexAttribArray(aTexCoord);
+  gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 0, 0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mesh.ibo);
+  gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_SHORT, 0);
+  // Restore state for lit shader
+  gl.disableVertexAttribArray(aTexCoord);
+  gl.useProgram(program);
 }
 
 function drawMesh(mesh, modelMatrix, color, vpMatrix) {
@@ -1250,6 +1342,7 @@ fileInput.addEventListener('change', (e) => {
     const img = new Image();
     img.onload = () => {
       desiredImage = img;
+      createTableTexture(img);
       document.getElementById('btn-start').disabled = false;
       drawDesiredImage();
     };
@@ -1297,19 +1390,111 @@ function drawCurrentView() {
   ctx.fillStyle = '#0a0a1a';
   ctx.fillRect(0, 0, c.width, c.height);
 
-  if (!currentFeatures) return;
+  // Render scene from EE camera perspective
+  const transforms = computeFK(jointAngles);
+  const eeTrans = transforms[transforms.length - 1];
 
-  // Draw current projected points
-  ctx.fillStyle = '#ff6b35';
-  for (const f of currentFeatures) {
-    const px = c.width / 2 + f.x * c.width * 0.3;
-    const py = c.height / 2 + f.y * c.height * 0.3;
-    ctx.beginPath();
-    ctx.arc(px, py, 5, 0, Math.PI * 2);
-    ctx.fill();
+  // EE camera: looks along local -Y, up is local Z
+  // EE position is the last transform's translation
+  const eePos = [eeTrans[12], eeTrans[13], eeTrans[14]];
+
+  // The camera local axes from the EE transform (column-major):
+  // Column 0 (X-axis): eeTrans[0,1,2] - camera right
+  // Column 1 (Y-axis): eeTrans[4,5,6] - camera looks along -Y
+  // Column 2 (Z-axis): eeTrans[8,9,10] - camera up
+  const lookDir = [-eeTrans[4], -eeTrans[5], -eeTrans[6]]; // -Y is forward
+  const upDir = [eeTrans[8], eeTrans[9], eeTrans[10]]; // Z is up
+
+  const lookTarget = [
+    eePos[0] + lookDir[0],
+    eePos[1] + lookDir[1],
+    eePos[2] + lookDir[2]
+  ];
+
+  // Render to FBO
+  const fboW = c.width || 200;
+  const fboH = c.height || 150;
+  ensureEEFramebuffer(fboW, fboH);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, eeFBO);
+  gl.viewport(0, 0, fboW, fboH);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  const eeAspect = fboW / fboH;
+  const eeProj = M4.create();
+  M4.perspective(eeProj, Math.PI / 3, eeAspect, 0.01, 10);
+
+  const eeView = M4.create();
+  M4.lookAt(eeView, eePos, lookTarget, upDir);
+
+  const eeVP = M4.create();
+  M4.multiply(eeVP, eeProj, eeView);
+
+  gl.useProgram(program);
+  gl.uniform3fv(uLightDir, [0.5, 0.8, 0.3]);
+  gl.uniform3fv(uEyePos, eePos);
+
+  // Draw floor
+  const floorModel = M4.create();
+  M4.translate(floorModel, [0, -0.005, 0]);
+  drawMesh(floorMesh, floorModel, [0.12, 0.12, 0.18], eeVP);
+
+  // Draw table
+  const tableModel = M4.create();
+  M4.translate(tableModel, [tablePos[0], tablePos[1], tablePos[2]]);
+  drawMesh(tableMesh, tableModel, [0.3, 0.25, 0.2], eeVP);
+
+  // Draw image on table
+  if (desiredImage && tableTexture && tableTexPlane) {
+    const imgModel = M4.create();
+    M4.translate(imgModel, [tablePos[0], tablePos[1] + 0.002, tablePos[2]]);
+    drawTexturedMesh(tableTexPlane, imgModel, tableTexture, eeVP);
   }
 
-  // Draw desired points as outline
+  // Draw robot (so it can see itself partially)
+  const fkTransforms = computeFK(jointAngles);
+  drawMesh(baseMesh, fkTransforms[0], linkColors[0], eeVP);
+  for (let i = 1; i < fkTransforms.length - 1; i++) {
+    const jointModel = M4.create();
+    for (let k = 0; k < 16; k++) jointModel[k] = fkTransforms[i][k];
+    drawMesh(jointMesh, jointModel, jointColor, eeVP);
+    if (i < linkMeshes.length + 1) {
+      drawMesh(linkMeshes[i - 1], fkTransforms[i], linkColors[i], eeVP);
+    }
+  }
+
+  // Read pixels from FBO and draw to 2D canvas
+  if (!eePixelBuf || eePixelBuf.length !== fboW * fboH * 4) {
+    eePixelBuf = new Uint8Array(fboW * fboH * 4);
+  }
+  gl.readPixels(0, 0, fboW, fboH, gl.RGBA, gl.UNSIGNED_BYTE, eePixelBuf);
+
+  // Restore main framebuffer and viewport
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  resizeCanvas();
+
+  // Draw pixels to the 2D canvas (flip Y since GL is bottom-up)
+  const imgData = ctx.createImageData(fboW, fboH);
+  for (let y = 0; y < fboH; y++) {
+    const srcRow = (fboH - 1 - y) * fboW * 4;
+    const dstRow = y * fboW * 4;
+    for (let x = 0; x < fboW * 4; x++) {
+      imgData.data[dstRow + x] = eePixelBuf[srcRow + x];
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // Overlay feature points if available
+  if (currentFeatures) {
+    ctx.fillStyle = '#ff6b35';
+    for (const f of currentFeatures) {
+      const px = c.width / 2 + f.x * c.width * 0.3;
+      const py = c.height / 2 + f.y * c.height * 0.3;
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
   if (desiredFeatures) {
     ctx.strokeStyle = '#00d4ff';
     ctx.lineWidth = 2;
@@ -1317,15 +1502,45 @@ function drawCurrentView() {
       const px = c.width / 2 + f.x * c.width * 0.3;
       const py = c.height / 2 + f.y * c.height * 0.3;
       ctx.beginPath();
-      ctx.arc(px, py, 5, 0, Math.PI * 2);
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
+}
 
-  // Labels
-  ctx.fillStyle = '#666';
-  ctx.font = '10px sans-serif';
-  ctx.fillText('Orange: current | Cyan: desired', 5, c.height - 5);
+// EE camera framebuffer management
+let eeFBO = null;
+let eeFBOTex = null;
+let eeFBODepth = null;
+let eeFBOW = 0, eeFBOH = 0;
+let eePixelBuf = null;
+
+function ensureEEFramebuffer(w, h) {
+  if (eeFBO && eeFBOW === w && eeFBOH === h) return;
+  if (eeFBO) {
+    gl.deleteFramebuffer(eeFBO);
+    gl.deleteTexture(eeFBOTex);
+    gl.deleteRenderbuffer(eeFBODepth);
+  }
+  eeFBOW = w;
+  eeFBOH = h;
+  eeFBO = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, eeFBO);
+
+  eeFBOTex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, eeFBOTex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, eeFBOTex, 0);
+
+  eeFBODepth = gl.createRenderbuffer();
+  gl.bindRenderbuffer(gl.RENDERBUFFER, eeFBODepth);
+  gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, w, h);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, eeFBODepth);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.bindTexture(gl.TEXTURE_2D, null);
 }
 
 function drawErrorGraph() {
@@ -1419,15 +1634,11 @@ function render(time) {
   M4.translate(tableModel, [tablePos[0], tablePos[1], tablePos[2]]);
   drawMesh(tableMesh, tableModel, [0.3, 0.25, 0.2], vp);
 
-  // Draw desired image on table (as a colored quad)
-  if (desiredImage) {
+  // Draw desired image on table (as textured quad or fallback colored quad)
+  if (desiredImage && tableTexture && tableTexPlane) {
     const imgModel = M4.create();
     M4.translate(imgModel, [tablePos[0], tablePos[1] + 0.002, tablePos[2]]);
-    const sc = M4.identity(M4.create());
-    sc[0] = tableSize; sc[10] = tableSize;
-    const imgFinal = M4.create();
-    M4.multiply(imgFinal, imgModel, sc);
-    drawMesh(tableMesh, imgFinal, [0.5, 0.4, 0.3], vp);
+    drawTexturedMesh(tableTexPlane, imgModel, tableTexture, vp);
   }
 
   // Draw robot
