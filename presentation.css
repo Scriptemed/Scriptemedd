@@ -1075,3 +1075,223 @@ html,body{
 /* nice scrollbar */
 .slide::-webkit-scrollbar{ width:6px; }
 .slide::-webkit-scrollbar-thumb{ background: var(--border); border-radius:3px; }
+
+
+
+/* =====================================================
+   MATH / EQUATIONS — professional typesetting
+   ===================================================== */
+
+/* italic math variables (STIX = a TeX-like serif) */
+.math-i{
+  font-family: 'STIX Two Text', 'Cambria Math', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+.math-i sub, .math-i sup{
+  font-style: italic;
+  font-size: .75em;
+}
+
+/* generic equation block */
+.eq-block{
+  margin-top: 14px;
+  padding: 18px 22px;
+  background: linear-gradient(120deg, rgba(0,0,0,.55), rgba(125,249,255,.05));
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: 12px;
+  font-family: 'STIX Two Text', 'Cambria Math', 'Times New Roman', serif;
+  font-size: 22px;
+  color: #f4faff;
+  line-height: 1.4;
+  text-align: left;
+  letter-spacing: .01em;
+  box-shadow: inset 0 0 60px -30px rgba(125,249,255,.4);
+}
+.eq-block.big{
+  font-size: 28px;
+  padding: 22px 28px;
+}
+.eq-block.centered{
+  text-align: center;
+}
+.eq-block sup, .eq-block sub{
+  font-size: .65em;
+  letter-spacing: 0;
+}
+.eq-block big{
+  font-size: 1.2em;
+  font-weight: 300;
+  color: var(--cyan);
+  vertical-align: middle;
+}
+
+.eq-line + .eq-line{ margin-top: 8px; }
+
+.op-int{
+  font-family: 'STIX Two Text', 'Cambria Math', serif;
+  font-style: italic;
+  font-size: 1.4em;
+  color: var(--cyan);
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.eq-label{
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 6px;
+}
+
+.eq-legend{
+  margin-top: 12px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+.eq-legend b{
+  color: var(--cyan);
+  font-family: 'STIX Two Text', serif;
+  font-style: italic;
+  font-weight: 500;
+  margin-right: 4px;
+}
+.eq-legend i{
+  color: var(--text-dim);
+}
+
+/* override old monospace formula style */
+.formula{
+  margin-top: 14px;
+  background: linear-gradient(120deg, rgba(0,0,0,.55), rgba(125,249,255,.05));
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-family: 'STIX Two Text', 'Cambria Math', serif;
+  font-size: 18px;
+  color: #f4faff;
+  letter-spacing: .01em;
+  text-align: center;
+}
+.formula-big{
+  font-size: 24px;
+  padding: 22px 26px;
+}
+
+/* =====================================================
+   SLIDES 7 & 8 — split DWT / LWT (one each)
+   ===================================================== */
+
+.single-wave-layout{
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  flex: 1;
+  animation: slideIn .7s .2s both ease-out;
+}
+
+.wavelet-card.large{
+  padding: 32px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.wave-intro{
+  font-size: 16px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+.wave-intro strong{ color: var(--cyan); }
+
+.dwt-blocks.big{
+  margin: 4px 0;
+}
+.dwt-blocks.big .dwt-block{
+  padding: 26px 16px;
+  font-size: 24px;
+}
+.dwt-blocks.big .dwt-block small{
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.lwt-pipeline.big{
+  margin: 8px 0;
+  gap: 4px;
+}
+.lwt-pipeline.big .lwt-step{
+  padding: 22px 14px;
+  font-size: 15px;
+  gap: 8px;
+}
+.lwt-pipeline.big .lwt-step strong{
+  font-size: 17px;
+  color: var(--text);
+}
+.lwt-pipeline.big .lwt-step small{
+  font-size: 11px;
+  color: var(--text-mute);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.check-list.two-cols{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 18px;
+  margin-top: 6px;
+}
+
+.dwt-side{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+.dwt-formula-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  transition: all .3s;
+}
+.dwt-formula-card:hover{
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+.dwt-formula-card.alt{
+  background: linear-gradient(140deg, rgba(125,249,255,.05), rgba(77,125,255,.03));
+}
+.dwt-formula-card .eq-block{
+  margin-top: 4px;
+}
+
+/* =====================================================
+   SLIDE 10 — control law block
+   ===================================================== */
+
+.control-law{
+  margin-top: 22px;
+  padding: 22px 28px;
+  background: linear-gradient(120deg, rgba(125,249,255,.06), rgba(0,0,0,.3));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.control-law .eq-block{
+  margin-top: 8px;
+}
+
+/* responsive split-wavelet */
+@media (max-width: 1100px){
+  .single-wave-layout{ grid-template-columns: 1fr; }
+  .check-list.two-cols{ grid-template-columns: 1fr; }
+}
