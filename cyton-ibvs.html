@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cyton Gamma 300 - IBVS Simulation</title>
+<style>
+  :root {
+    --bg-0: #0b0f14;
+    --bg-1: #111720;
+    --bg-2: #161e2a;
+    --bg-3: #1d2735;
+    --line: #243042;
+    --txt: #e6edf3;
+    --muted: #8b9bb0;
+    --accent: #00e5ff;
+    --accent-2: #7c5cff;
+    --ok: #2ecc71;
+    --warn: #f39c12;
+    --err: #ff4d6d;
+    --shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: radial-gradient(1200px 700px at 70% -10%, #1a2638 0%, var(--bg-0) 60%);
+    color: var(--txt);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+  }
+  /* Top bar */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; height: 56px;
+    background: linear-gradient(180deg, rgba(17,23,32,0.95), rgba(17,23,32,0.85));
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; padding: 0 18px; gap: 14px;
+    z-index: 50; backdrop-filter: blur(8px);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .3px;
+  }
+  .brand .logo {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: conic-gradient(from 200deg, var(--accent), var(--accent-2), var(--accent));
+    box-shadow: 0 0 16px rgba(0,229,255,0.35);
+    display: grid; place-items: center; font-size: 14px; color: #001018; font-weight: 900;
+  }
+  .brand .sub { color: var(--muted); font-weight: 500; font-size: 12px; margin-left: 6px; }
+  .topbar .spacer { flex: 1; }
+  .pill {
+    padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--bg-2); color: var(--muted); font-size: 12px;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .pill.warn .dot { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+  .pill.err  .dot { background: var(--err);  box-shadow: 0 0 8px var(--err);  }
+
+  /* Main grid */
+  .app {
+    position: fixed; top: 56px; left: 0; right: 0; bottom: 0;
+    display: grid;
+    grid-template-columns: 320px 1fr 360px;
+    grid-template-rows: 1fr 230px;
+    gap: 10px; padding: 10px;
+  }
+  .panel {
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden; position: relative;
+    display: flex; flex-direction: column;
+  }
+  .panel h3 {
+    margin: 0; padding: 10px 14px; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted);
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(0,0,0,0.15);
+  }
+  .panel h3 .badge {
+    margin-left: auto; font-size: 10px; padding: 2px 8px; border-radius: 999px;
+    background: var(--bg-3); color: var(--accent); border: 1px solid var(--line);
+    text-transform: none; letter-spacing: .2px;
+  }
+  .panel .body { padding: 12px 14px; overflow: auto; }
+
+  /* Left column - joint controls */
+  .left { grid-row: 1 / span 2; }
+  .joint-row {
+    display: grid; grid-template-columns: 36px 1fr 60px;
+    gap: 10px; align-items: center; margin-bottom: 10px;
+  }
+  .joint-row .lab {
+    font-size: 11px; font-weight: 700; color: var(--txt);
+    background: var(--bg-3); border: 1px solid var(--line);
+    border-radius: 6px; padding: 6px 0; text-align: center;
+  }
+  .joint-row input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 6px; border-radius: 999px;
+    background: linear-gradient(90deg, #2b3a52, #1c2533);
+    outline: none; border: 1px solid var(--line);
+  }
+  .joint-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.2);
+  }
+  .joint-row .val {
+    font-variant-numeric: tabular-nums; font-size: 12px;
+    color: var(--accent); text-align: right;
+  }
+  .section { margin-top: 16px; }
+  .section .title {
+    font-size: 11px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn {
+    flex: 1; padding: 9px 10px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--bg-3);
+    color: var(--txt); font-size: 12px; cursor: pointer;
+    transition: all 0.15s ease; font-weight: 600;
+  }
+  .btn:hover { background: #243247; border-color: #2f3e57; }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), #00b4d8);
+    color: #001218; border-color: transparent;
+    box-shadow: 0 4px 14px rgba(0,229,255,0.25);
+  }
+  .btn.primary:hover { filter: brightness(1.1); }
+  .btn.danger {
+    background: linear-gradient(135deg, #ff4d6d, #c9184a);
+    color: #fff; border-color: transparent;
+  }
+  .btn.ghost { background: transparent; }
+
+  /* Center column - 3D viewport */
+  .center { position: relative; min-height: 0; }
+  #threeView { width: 100%; height: 100%; display: block; background: radial-gradient(800px 500px at 50% 30%, #1a2230, #0b0f14); }
+  .viewport-overlay {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+  }
+  .telemetry {
+    background: rgba(11,15,20,0.7); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px; font-size: 11px;
+    backdrop-filter: blur(6px); color: var(--muted);
+    font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace;
+  }
+  .telemetry b { color: var(--accent); font-weight: 600; }
+  .viewport-bottom {
+    position: absolute; bottom: 12px; right: 12px;
+    background: rgba(11,15,20,0.7); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px; font-size: 11px;
+    color: var(--muted); backdrop-filter: blur(6px);
+  }
+
+  /* Right column - image windows + upload */
+  .right { display: flex; flex-direction: column; gap: 10px; }
+  .img-window {
+    background: linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .img-window h3 {
+    margin: 0; padding: 8px 12px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    border-bottom: 1px solid var(--line); background: rgba(0,0,0,0.15);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .img-window h3 .badge {
+    margin-left: auto; font-size: 10px; padding: 2px 6px; border-radius: 4px;
+    background: var(--bg-3); color: var(--accent);
+  }
+  .img-window canvas {
+    width: 100%; flex: 1; display: block;
+    background: #000; image-rendering: pixelated;
+  }
+  .upload-zone {
+    border: 1.5px dashed var(--line); border-radius: 10px;
+    padding: 14px; text-align: center; cursor: pointer;
+    transition: all 0.2s ease; background: rgba(0,0,0,0.15);
+  }
+  .upload-zone:hover { border-color: var(--accent); background: rgba(0,229,255,0.05); }
+  .upload-zone.has-image { border-color: var(--ok); background: rgba(46,204,113,0.05); }
+  .upload-zone .icon { font-size: 24px; margin-bottom: 6px; }
+  .upload-zone .text { font-size: 12px; color: var(--muted); }
+
+  /* Bottom panel - error chart */
+  .bottom { grid-column: 2 / span 2; }
+  .chart-wrap { position: relative; flex: 1; padding: 8px 12px; }
+  #errorChart { width: 100%; height: 100%; display: block; }
+  .legend {
+    position: absolute; top: 14px; right: 14px;
+    display: flex; gap: 14px; font-size: 11px; color: var(--muted);
+  }
+  .legend .k { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 12px; height: 3px; border-radius: 2px; }
+
+  /* IBVS controls */
+  .ibvs-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .ibvs-controls label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .ibvs-controls input[type=number] {
+    width: 100%; padding: 6px 8px; background: var(--bg-3); border: 1px solid var(--line);
+    border-radius: 6px; color: var(--txt); font-size: 12px;
+    font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', monospace;
+  }
+  .status-line {
+    display: flex; justify-content: space-between; padding: 6px 0;
+    font-size: 11px; border-bottom: 1px dashed var(--line);
+  }
+  .status-line:last-child { border-bottom: none; }
+  .status-line .lbl { color: var(--muted); }
+  .status-line .v { color: var(--txt); font-variant-numeric: tabular-nums;
+                    font-family: 'JetBrains Mono', monospace; }
+  .status-line .v.ok { color: var(--ok); }
+  .status-line .v.warn { color: var(--warn); }
+  input[type=file] { display: none; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">CG</div>
+      <div>Cyton Gamma 300 <span class="sub">IBVS Visual Servoing Simulator</span></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="pill" id="statusPill"><span class="dot"></span><span id="statusTxt">Ready</span></div>
+    <div class="pill"><span>FPS&nbsp;</span><b id="fpsTxt" style="color:var(--accent)">--</b></div>
+    <div class="pill"><span>7-DOF&nbsp;Manipulator</span></div>
+  </div>
+
+  <div class="app">
+    <!-- LEFT COLUMN -->
+    <div class="panel left">
+      <h3>Joint Control <span class="badge">Manual</span></h3>
+      <div class="body">
+        <div id="joints"></div>
+
+        <div class="section">
+          <div class="title">IBVS Controller</div>
+          <div class="btns">
+            <button class="btn primary" id="btnStart">▶ Start IBVS</button>
+            <button class="btn danger"  id="btnStop">■ Stop</button>
+          </div>
+          <div class="btns" style="margin-top:8px;">
+            <button class="btn ghost" id="btnHome">Home Pose</button>
+            <button class="btn ghost" id="btnRand">Random Pose</button>
+          </div>
+          <div class="ibvs-controls">
+            <div>
+              <label>Gain λ</label>
+              <input type="number" id="gainLambda" value="0.45" step="0.05" min="0.05" max="2"/>
+            </div>
+            <div>
+              <label>Damping μ</label>
+              <input type="number" id="dampMu" value="0.02" step="0.005" min="0.001" max="0.5"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="title">Status</div>
+          <div class="status-line"><span class="lbl">Mode</span><span class="v" id="stMode">Idle</span></div>
+          <div class="status-line"><span class="lbl">Iteration</span><span class="v" id="stIter">0</span></div>
+          <div class="status-line"><span class="lbl">‖e‖ (px)</span><span class="v" id="stErr">—</span></div>
+          <div class="status-line"><span class="lbl">‖v‖ (m/s)</span><span class="v" id="stVel">—</span></div>
+          <div class="status-line"><span class="lbl">Features</span><span class="v" id="stFeat">4 / 4</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER 3D VIEWPORT -->
+    <div class="panel center">
+      <h3>3D Workspace <span class="badge" id="cameraBadge">Eye-in-Hand</span></h3>
+      <canvas id="threeView"></canvas>
+      <div class="viewport-overlay">
+        <div class="telemetry">
+          End-Effector: <b id="eePos">x=0.000  y=0.000  z=0.000</b>
+        </div>
+        <div class="telemetry">
+          Camera: <b id="camPose">looking at table</b>
+        </div>
+      </div>
+      <div class="viewport-bottom">Drag to orbit · Scroll to zoom · Right-drag to pan</div>
+    </div>
+
+    <!-- RIGHT COLUMN: Image windows -->
+    <div class="right">
+      <div class="img-window" style="flex: 1;">
+        <h3>Desired Image s* <span class="badge" id="dsBadge">Not loaded</span></h3>
+        <canvas id="desiredCanvas" width="320" height="240"></canvas>
+      </div>
+      <div class="img-window" style="flex: 1;">
+        <h3>Current Image s <span class="badge">Live</span></h3>
+        <canvas id="currentCanvas" width="320" height="240"></canvas>
+      </div>
+      <div class="panel" style="flex: 0 0 auto;">
+        <h3>Target Image Upload</h3>
+        <div class="body">
+          <label class="upload-zone" id="uploadZone">
+            <div class="icon">📷</div>
+            <div class="text"><b>Click to upload</b> desired image<br/><span style="opacity:.7">PNG / JPG · placed on table</span></div>
+            <input type="file" id="imgInput" accept="image/*"/>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM: Error chart -->
+    <div class="panel bottom">
+      <h3>Live Feature Error e(t) = s − s* <span class="badge" id="convBadge">—</span></h3>
+      <div class="chart-wrap">
+        <canvas id="errorChart"></canvas>
+        <div class="legend">
+          <span class="k"><span class="sw" style="background:#ff6b9d"></span>‖e‖ (norm)</span>
+          <span class="k"><span class="sw" style="background:#00e5ff"></span>e₁</span>
+          <span class="k"><span class="sw" style="background:#7c5cff"></span>e₂</span>
+          <span class="k"><span class="sw" style="background:#2ecc71"></span>e₃</span>
+          <span class="k"><span class="sw" style="background:#f39c12"></span>e₄</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+// ============================================================
+// Cyton Gamma 300 - IBVS Visual Servoing Simulator
+// 7-DOF manipulator with eye-in-hand image-based visual servoing
+// ============================================================
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ----------- THREE.js scene ---------------------------------
+const canvas3D = document.getElementById('threeView');
+const renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0f14);
+scene.fog = new THREE.Fog(0x0b0f14, 4, 12);
+
+const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 100);
+camera.position.set(1.1, 0.9, 1.4);
+camera.lookAt(0, 0.35, 0);
+
+const controls = new OrbitControls(camera, canvas3D);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.target.set(0, 0.4, 0);
+controls.minDistance = 0.4; controls.maxDistance = 6;
+
+// Lighting
+const hemi = new THREE.HemisphereLight(0x9bc6ff, 0x1a1a2e, 0.6);
+scene.add(hemi);
+
+const keyLight = new THREE.DirectionalLight(0xffffff, 1.6);
+keyLight.position.set(2.5, 4, 2);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.set(2048, 2048);
+keyLight.shadow.camera.left = -2; keyLight.shadow.camera.right = 2;
+keyLight.shadow.camera.top = 2;   keyLight.shadow.camera.bottom = -2;
+keyLight.shadow.bias = -0.0003;
+scene.add(keyLight);
+
+const rim = new THREE.PointLight(0x7c5cff, 1.2, 6);
+rim.position.set(-1.5, 1.5, -1.5);
+scene.add(rim);
+
+const fill = new THREE.PointLight(0x00e5ff, 0.8, 5);
+fill.position.set(1.5, 0.6, -1.0);
+scene.add(fill);
+
+// Floor / ground
+const floorGeo = new THREE.PlaneGeometry(8, 8);
+const floorMat = new THREE.MeshStandardMaterial({
+  color: 0x161e2a, roughness: 0.85, metalness: 0.1
+});
+const floor = new THREE.Mesh(floorGeo, floorMat);
+floor.rotation.x = -Math.PI/2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+// Grid
+const grid = new THREE.GridHelper(6, 30, 0x2a3a52, 0x1a2434);
+grid.position.y = 0.001;
+scene.add(grid);
+
+// Robot base mounting plate
+const plateGeo = new THREE.CylinderGeometry(0.16, 0.18, 0.02, 48);
+const plateMat = new THREE.MeshStandardMaterial({
+  color: 0x222a36, roughness: 0.5, metalness: 0.7
+});
+const plate = new THREE.Mesh(plateGeo, plateMat);
+plate.position.y = 0.01;
+plate.castShadow = true; plate.receiveShadow = true;
+scene.add(plate);
+
+// ============================================================
+// CYTON GAMMA 300 — 7-DOF kinematic chain
+//   Inspired by the real anthropomorphic 7-DOF arm:
+//   shoulder yaw → shoulder pitch → upper-arm roll → elbow pitch
+//   → forearm roll → wrist pitch → wrist roll → gripper
+// ============================================================
+
+// Materials reused across links
+const matWhite = new THREE.MeshStandardMaterial({
+  color: 0xf2f4f7, roughness: 0.35, metalness: 0.15
+});
+const matDark = new THREE.MeshStandardMaterial({
+  color: 0x1c1f26, roughness: 0.55, metalness: 0.3
+});
+const matAccent = new THREE.MeshStandardMaterial({
+  color: 0x00b4d8, roughness: 0.4, metalness: 0.5,
+  emissive: 0x002a33, emissiveIntensity: 0.5
+});
+const matGray = new THREE.MeshStandardMaterial({
+  color: 0x8a93a0, roughness: 0.4, metalness: 0.6
+});
+const matRubber = new THREE.MeshStandardMaterial({
+  color: 0x111418, roughness: 0.95, metalness: 0
+});
+
+function knuckle(radius, length, mat = matWhite) {
+  const g = new THREE.Group();
+  // Main capsule body
+  const cyl = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, 32),
+    mat
+  );
+  cyl.castShadow = true; cyl.receiveShadow = true;
+  cyl.rotation.z = Math.PI/2; // along X by default
+  g.add(cyl);
+  // End caps
+  const cap1 = new THREE.Mesh(new THREE.SphereGeometry(radius, 24, 16), mat);
+  cap1.position.x = -length/2; cap1.castShadow = true; cap1.receiveShadow = true;
+  const cap2 = cap1.clone(); cap2.position.x = length/2;
+  g.add(cap1, cap2);
+  // Dark joint band
+  const band = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius * 1.02, radius * 1.02, length * 0.18, 32),
+    matDark
+  );
+  band.rotation.z = Math.PI/2;
+  g.add(band);
+  // Accent ring
+  const ring = new THREE.Mesh(
+    new THREE.TorusGeometry(radius * 1.04, 0.006, 12, 48),
+    matAccent
+  );
+  ring.rotation.y = Math.PI/2;
+  g.add(ring);
+  return g;
+}
+
+function tubeLink(length, radius = 0.025) {
+  const g = new THREE.Group();
+  const tube = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, length, 24),
+    matWhite
+  );
+  tube.castShadow = true; tube.receiveShadow = true;
+  g.add(tube);
+  // Decorative bands
+  for (const yy of [-length*0.35, length*0.35]) {
+    const b = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius*1.08, radius*1.08, 0.012, 24),
+      matDark
+    );
+    b.position.y = yy; g.add(b);
+  }
+  return g;
+}
+
+// Build the kinematic chain as nested THREE.Groups.
+// Each "joint" group holds the rotation; its children are offset
+// by the link length and contain the next joint group.
+
+const robot = new THREE.Group();
+scene.add(robot);
+
+// J1 - shoulder yaw (Z axis, vertical)
+const j1 = new THREE.Group(); robot.add(j1);
+const baseHousing = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.075, 0.085, 0.10, 36),
+  matWhite
+);
+baseHousing.position.y = 0.05; baseHousing.castShadow = true;
+j1.add(baseHousing);
+const baseTop = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.07, 0.07, 0.012, 36),
+  matDark
+);
+baseTop.position.y = 0.106; j1.add(baseTop);
+
+// J2 - shoulder pitch (Y axis after J1) — knuckle horizontal
+const j2 = new THREE.Group();
+j2.position.y = 0.115;
+j1.add(j2);
+const knuckle2 = knuckle(0.055, 0.13);
+j2.add(knuckle2);
+
+// Link from J2 to J3 (upper arm tube going up)
+const j3 = new THREE.Group();
+j3.position.y = 0.05;
+j2.add(j3);
+const upperArmTube = tubeLink(0.18, 0.028);
+upperArmTube.position.y = 0.09;
+j2.add(upperArmTube);
+j3.position.y = 0.18;
+
+// J3 - upper-arm roll (Y axis — twist)
+const knuckle3 = knuckle(0.05, 0.11);
+knuckle3.rotation.y = Math.PI/2; // orient so axis is horizontal
+j3.add(knuckle3);
+
+// J4 - elbow pitch
+const j4 = new THREE.Group();
+j4.position.y = 0.06;
+j3.add(j4);
+const knuckle4 = knuckle(0.05, 0.115);
+j4.add(knuckle4);
+
+// Forearm tube
+const forearmTube = tubeLink(0.16, 0.024);
+forearmTube.position.y = 0.085;
+j4.add(forearmTube);
+
+// J5 - forearm roll
+const j5 = new THREE.Group();
+j5.position.y = 0.165;
+j4.add(j5);
+const knuckle5 = knuckle(0.045, 0.10);
+knuckle5.rotation.y = Math.PI/2;
+j5.add(knuckle5);
+
+// J6 - wrist pitch
+const j6 = new THREE.Group();
+j6.position.y = 0.055;
+j5.add(j6);
+const knuckle6 = knuckle(0.04, 0.09);
+j6.add(knuckle6);
+
+// J7 - wrist roll
+const j7 = new THREE.Group();
+j7.position.y = 0.045;
+j6.add(j7);
+const knuckle7 = knuckle(0.035, 0.07);
+knuckle7.rotation.y = Math.PI/2;
+j7.add(knuckle7);
+
+// Tool flange
+const flange = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.032, 0.032, 0.012, 24),
+  matGray
+);
+flange.position.y = 0.03; j7.add(flange);
+
+// Eye-in-hand camera body (mounted on flange, looking +Y direction in joint frame)
+const cameraBody = new THREE.Group();
+cameraBody.position.y = 0.05;
+j7.add(cameraBody);
+const camHousing = new THREE.Mesh(
+  new THREE.BoxGeometry(0.05, 0.04, 0.05),
+  matDark
+);
+camHousing.castShadow = true;
+cameraBody.add(camHousing);
+const camLens = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.014, 0.018, 0.025, 24),
+  matRubber
+);
+camLens.rotation.x = Math.PI/2;
+camLens.position.set(0, 0, 0.03);
+cameraBody.add(camLens);
+const camGlass = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.012, 0.012, 0.002, 24),
+  new THREE.MeshPhysicalMaterial({
+    color: 0x224466, roughness: 0.05, metalness: 0.2,
+    transmission: 0.6, ior: 1.4, clearcoat: 1
+  })
+);
+camGlass.rotation.x = Math.PI/2;
+camGlass.position.set(0, 0, 0.043);
+cameraBody.add(camGlass);
+const camLed = new THREE.Mesh(
+  new THREE.SphereGeometry(0.003, 12, 12),
+  new THREE.MeshBasicMaterial({ color: 0xff3355 })
+);
+camLed.position.set(0.018, 0.018, 0.025);
+cameraBody.add(camLed);
+
+// Gripper - two parallel fingers
+const gripperBase = new THREE.Mesh(
+  new THREE.BoxGeometry(0.07, 0.025, 0.045),
+  matWhite
+);
+gripperBase.position.y = 0.022;
+gripperBase.castShadow = true;
+j7.add(gripperBase);
+
+const fingerL = new THREE.Mesh(
+  new THREE.BoxGeometry(0.012, 0.05, 0.04),
+  matDark
+);
+fingerL.position.set(-0.025, 0.06, 0);
+fingerL.castShadow = true;
+j7.add(fingerL);
+const fingerR = fingerL.clone();
+fingerR.position.set(0.025, 0.06, 0);
+j7.add(fingerR);
+
+// Cables/wires - subtle decorative element
+const cableGeo = new THREE.TorusGeometry(0.018, 0.003, 8, 24, Math.PI);
+const cable = new THREE.Mesh(cableGeo, matRubber);
+cable.position.set(0, 0.01, -0.03);
+cable.rotation.x = Math.PI/2;
+j7.add(cable);
+
+// ============================================================
+// TABLE & TARGET
+// ============================================================
+const table = new THREE.Group();
+scene.add(table);
+
+const tableTop = new THREE.Mesh(
+  new THREE.BoxGeometry(0.7, 0.025, 0.5),
+  new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.7, metalness: 0.05 })
+);
+tableTop.position.set(0.55, 0.30, 0);
+tableTop.castShadow = true; tableTop.receiveShadow = true;
+table.add(tableTop);
+
+// 4 legs
+for (const [dx, dz] of [[-0.32,-0.22],[0.32,-0.22],[-0.32,0.22],[0.32,0.22]]) {
+  const leg = new THREE.Mesh(
+    new THREE.BoxGeometry(0.025, 0.30, 0.025),
+    new THREE.MeshStandardMaterial({ color: 0x2a1d10, roughness: 0.8 })
+  );
+  leg.position.set(0.55 + dx, 0.15, dz);
+  leg.castShadow = true;
+  table.add(leg);
+}
+
+// The TARGET that the robot looks at — a flat panel on the table
+// We use a Plane with a CanvasTexture so the user-uploaded image
+// shows up in the 3D world AND is what the eye-in-hand camera "sees".
+const targetCanvas = document.createElement('canvas');
+targetCanvas.width = 512; targetCanvas.height = 384;
+const targetCtx = targetCanvas.getContext('2d');
+drawDefaultTarget(targetCtx, targetCanvas.width, targetCanvas.height);
+
+const targetTex = new THREE.CanvasTexture(targetCanvas);
+targetTex.colorSpace = THREE.SRGBColorSpace;
+targetTex.anisotropy = 8;
+
+const targetWidth  = 0.32;
+const targetHeight = 0.24;
+
+const targetMat = new THREE.MeshStandardMaterial({
+  map: targetTex, roughness: 0.6, metalness: 0.0
+});
+const targetPanel = new THREE.Mesh(
+  new THREE.PlaneGeometry(targetWidth, targetHeight),
+  targetMat
+);
+targetPanel.rotation.x = -Math.PI/2; // lying flat on the table
+targetPanel.position.set(0.55, 0.314, 0);
+targetPanel.receiveShadow = true;
+scene.add(targetPanel);
+
+// Border frame around the target for nicer look
+const frameGeo = new THREE.BoxGeometry(targetWidth + 0.02, 0.005, targetHeight + 0.02);
+const frame = new THREE.Mesh(frameGeo, new THREE.MeshStandardMaterial({
+  color: 0x111418, roughness: 0.6, metalness: 0.4
+}));
+frame.position.set(0.55, 0.311, 0);
+frame.castShadow = true; frame.receiveShadow = true;
+scene.add(frame);
+
+// 4 visible feature markers on top of the panel — these are the
+// physical 3D points the IBVS controller tracks in image space.
+const featureMarkers = [];
+const featureWorld3D = []; // world-space 3D point objects (Vector3)
+function makeMarker(color) {
+  const m = new THREE.Mesh(
+    new THREE.SphereGeometry(0.008, 16, 12),
+    new THREE.MeshStandardMaterial({
+      color: color, emissive: color, emissiveIntensity: 0.5,
+      roughness: 0.3, metalness: 0.3
+    })
+  );
+  m.castShadow = true;
+  return m;
+}
+const featureColors = [0xff4d6d, 0x00e5ff, 0x7c5cff, 0xf39c12];
+const halfW = targetWidth/2 * 0.78;
+const halfH = targetHeight/2 * 0.78;
+const featureLocal = [
+  new THREE.Vector3(-halfW, 0.006, -halfH),
+  new THREE.Vector3( halfW, 0.006, -halfH),
+  new THREE.Vector3( halfW, 0.006,  halfH),
+  new THREE.Vector3(-halfW, 0.006,  halfH),
+];
+featureLocal.forEach((p, i) => {
+  const m = makeMarker(featureColors[i]);
+  m.position.copy(p);
+  m.position.x += 0.55; // table center offset (panel is at x=0.55)
+  // Note: panel y=0.314, marker y = panel_y + 0.006 (just above)
+  m.position.y = 0.314 + 0.003;
+  m.position.z += 0; // panel z=0
+  scene.add(m);
+  featureMarkers.push(m);
+  featureWorld3D.push(m.position.clone());
+});
+
+// ============================================================
+// EYE-IN-HAND CAMERA - second camera that renders the scene
+// from the robot's gripper-mounted camera. Used for the
+// "Current Image s" canvas in the right panel.
+// ============================================================
+const eyeCamera = new THREE.PerspectiveCamera(50, 4/3, 0.005, 5);
+cameraBody.add(eyeCamera);
+eyeCamera.position.set(0, 0, 0.045);
+eyeCamera.rotation.set(0, 0, 0);
+// In our chain "down" the kinematic chain corresponds to +Y (local).
+// However the camera body is attached after j7 with +Y outward, so
+// we want the eye camera looking along its local +Z (default forward
+// for THREE) but pointing in the chain's +Y direction.
+// We'll fix this with a rotation: rotate camera so its -Z (look dir)
+// points along +Y (extending out the gripper).
+eyeCamera.rotation.x = -Math.PI/2;
+// Now eye camera looks along world +Y of cameraBody, which after the
+// whole chain points down toward the table when arm is folded.
+
+// Render target for the eye-in-hand view
+const RT_W = 320, RT_H = 240;
+const eyeRT = new THREE.WebGLRenderTarget(RT_W, RT_H, {
+  minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+  format: THREE.RGBAFormat
+});
+const currentCanvas = document.getElementById('currentCanvas');
+const currentCtx = currentCanvas.getContext('2d');
+currentCanvas.width = RT_W; currentCanvas.height = RT_H;
+
+// ============================================================
+// JOINT CONTROLS UI
+// ============================================================
+const jointGroups = [j1, j2, j3, j4, j5, j6, j7];
+const jointAxes = ['y', 'z', 'y', 'z', 'y', 'z', 'y']; // alternating yaw/pitch
+const jointLimits = [
+  [-Math.PI,    Math.PI   ],
+  [-Math.PI*0.6, Math.PI*0.6],
+  [-Math.PI,    Math.PI   ],
+  [-Math.PI*0.6, Math.PI*0.6],
+  [-Math.PI,    Math.PI   ],
+  [-Math.PI*0.6, Math.PI*0.6],
+  [-Math.PI,    Math.PI   ],
+];
+const jointHome = [0, -0.55, 0, 1.2, 0, 0.5, 0];
+let jointAngles = [...jointHome];
+
+function applyJoints() {
+  for (let i = 0; i < 7; i++) {
+    const g = jointGroups[i];
+    g.rotation.set(0, 0, 0);
+    g.rotation[jointAxes[i]] = jointAngles[i];
+  }
+}
+
+const jointsRoot = document.getElementById('joints');
+const jointSliders = [];
+const jointValueEls = [];
+for (let i = 0; i < 7; i++) {
+  const row = document.createElement('div');
+  row.className = 'joint-row';
+  row.innerHTML = `
+    <div class="lab">J${i+1}</div>
+    <input type="range" min="${jointLimits[i][0]}" max="${jointLimits[i][1]}"
+           step="0.01" value="${jointAngles[i]}"/>
+    <div class="val">0.0°</div>
+  `;
+  jointsRoot.appendChild(row);
+  const sl = row.querySelector('input');
+  const vl = row.querySelector('.val');
+  jointSliders.push(sl);
+  jointValueEls.push(vl);
+  sl.addEventListener('input', () => {
+    jointAngles[i] = parseFloat(sl.value);
+    vl.textContent = (jointAngles[i] * 180/Math.PI).toFixed(1) + '°';
+    applyJoints();
+  });
+  vl.textContent = (jointAngles[i] * 180/Math.PI).toFixed(1) + '°';
+}
+applyJoints();
+
+function syncSlidersFromAngles() {
+  for (let i = 0; i < 7; i++) {
+    jointSliders[i].value = jointAngles[i];
+    jointValueEls[i].textContent = (jointAngles[i] * 180/Math.PI).toFixed(1) + '°';
+  }
+}
+
+document.getElementById('btnHome').onclick = () => {
+  jointAngles = [...jointHome];
+  syncSlidersFromAngles();
+  applyJoints();
+};
+document.getElementById('btnRand').onclick = () => {
+  for (let i = 0; i < 7; i++) {
+    const [lo, hi] = jointLimits[i];
+    jointAngles[i] = lo + Math.random() * (hi - lo) * 0.6 + (hi-lo)*0.2;
+  }
+  syncSlidersFromAngles(); applyJoints();
+};
+
+// ============================================================
+// IMAGE UPLOAD
+// ============================================================
+const imgInput = document.getElementById('imgInput');
+const uploadZone = document.getElementById('uploadZone');
+const desiredCanvas = document.getElementById('desiredCanvas');
+const desiredCtx = desiredCanvas.getContext('2d');
+desiredCanvas.width = RT_W; desiredCanvas.height = RT_H;
+
+let desiredImageLoaded = false;
+let desiredImage = null;
+
+function drawDefaultTarget(ctx, w, h) {
+  // Grid pattern with corner markers
+  const grad = ctx.createLinearGradient(0, 0, w, h);
+  grad.addColorStop(0, '#f5f5f0'); grad.addColorStop(1, '#dcdcd5');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 32) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+  for (let y = 0; y < h; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  // Corner markers
+  const cornerColors = ['#ff4d6d', '#00b4d8', '#7c5cff', '#f39c12'];
+  const corners = [[40,40],[w-40,40],[w-40,h-40],[40,h-40]];
+  corners.forEach(([cx,cy], i) => {
+    ctx.fillStyle = cornerColors[i];
+    ctx.beginPath(); ctx.arc(cx, cy, 14, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(i+1, cx, cy);
+  });
+  // Center text
+  ctx.fillStyle = '#222'; ctx.font = 'bold 28px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('TARGET', w/2, h/2);
+  ctx.font = '14px sans-serif';
+  ctx.fillText('Upload an image →', w/2, h/2 + 30);
+}
+
+imgInput.addEventListener('change', (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    const img = new Image();
+    img.onload = () => {
+      // Draw onto target panel (3D world)
+      targetCtx.fillStyle = '#fff';
+      targetCtx.fillRect(0, 0, targetCanvas.width, targetCanvas.height);
+      targetCtx.drawImage(img, 0, 0, targetCanvas.width, targetCanvas.height);
+      targetTex.needsUpdate = true;
+      // Draw onto desired image canvas
+      desiredCtx.fillStyle = '#000';
+      desiredCtx.fillRect(0, 0, desiredCanvas.width, desiredCanvas.height);
+      desiredCtx.drawImage(img, 0, 0, desiredCanvas.width, desiredCanvas.height);
+      desiredImage = img;
+      desiredImageLoaded = true;
+      uploadZone.classList.add('has-image');
+      document.getElementById('dsBadge').textContent = 'Loaded';
+      document.getElementById('dsBadge').style.color = 'var(--ok)';
+      // Capture the desired feature positions s* by snapshotting the
+      // current camera projections. We'll do it from a "target pose"
+      // that we synthesize (camera centered above the panel).
+      captureDesiredFeatures();
+      drawFeatureOverlay(desiredCtx, sStar, '#ff6b9d');
+    };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(f);
+});
+
+// ============================================================
+// IBVS CORE
+// ============================================================
+//
+// Feature vector s = [u1,v1, u2,v2, u3,v3, u4,v4] in image space
+// (normalized? we use pixel coords for display, but switch to
+//  normalized coords (x,y) = ((u-cx)/fx, (v-cy)/fy) for Jacobian.)
+//
+// For each point with depth Z, the interaction matrix is:
+//   L_p = [ -1/Z   0    x/Z   x*y      -(1+x^2)  y    ]
+//         [  0    -1/Z  y/Z   1+y^2    -x*y     -x    ]
+//
+// Stack 4 points -> L is 8x6.
+// Camera velocity: vc = -lambda * L^+ * (s - s*)
+// We then map vc -> joint velocities through robot Jacobian J_r (6x7).
+//   q_dot = J_r^+ * vc
+// We use Damped Least Squares pseudo-inverse for numerical safety.
+//
+// The robot Jacobian is computed numerically by central differences
+// on forward kinematics (small dq, measure ee pose change). Cheap
+// and robust for a 7-DOF arm at small angular steps.
+// ============================================================
+
+// Camera intrinsics (matching eyeCamera)
+function getIntrinsics() {
+  const fov = eyeCamera.fov * Math.PI/180;
+  const fy = (RT_H/2) / Math.tan(fov/2);
+  const fx = fy * eyeCamera.aspect;
+  return { fx, fy, cx: RT_W/2, cy: RT_H/2 };
+}
+
+// Project a world point through the eye camera.
+// Returns {u, v, Z} in pixels and depth in camera frame, or null if behind.
+const tmpV3 = new THREE.Vector3();
+const tmpM4 = new THREE.Matrix4();
+function projectFeature(worldPt) {
+  // World -> camera
+  tmpM4.copy(eyeCamera.matrixWorldInverse);
+  tmpV3.copy(worldPt).applyMatrix4(tmpM4);
+  // In THREE, camera looks along -Z, so visible Z is negative.
+  const Z = -tmpV3.z;
+  if (Z <= 0.001) return null;
+  const { fx, fy, cx, cy } = getIntrinsics();
+  const u = fx * (tmpV3.x / Z) + cx;
+  const v = -fy * (tmpV3.y / Z) + cy; // image y down
+  return { u, v, Z, x: tmpV3.x/Z, y: -tmpV3.y/Z };
+}
+
+function computeFeatures() {
+  const out = [];
+  for (const m of featureMarkers) {
+    const p = projectFeature(m.getWorldPosition(new THREE.Vector3()));
+    out.push(p);
+  }
+  return out;
+}
+
+let sStar = null; // desired features [{u,v,Z,x,y}, ...]
+
+function captureDesiredFeatures() {
+  // Save current joint state, move robot to a synthetic "ideal" view
+  const savedAngles = [...jointAngles];
+  // A pose that places eye-camera roughly centered & looking down at the panel.
+  // We'll pick a known-good viewing pose (precomputed by hand-tuning).
+  jointAngles = [0, -0.6, 0, 1.4, 0, 0.7, 0];
+  applyJoints();
+  // Update world matrices so projection sees current pose
+  scene.updateMatrixWorld(true);
+  eyeCamera.updateMatrixWorld(true);
+  eyeCamera.updateProjectionMatrix();
+  sStar = computeFeatures();
+  // Restore
+  jointAngles = savedAngles;
+  applyJoints();
+  scene.updateMatrixWorld(true);
+}
+
+// Initialize a default desired view
+captureDesiredFeatures();
+// Render a placeholder desired-image canvas with overlay
+desiredCtx.fillStyle = '#0b0f14';
+desiredCtx.fillRect(0,0,desiredCanvas.width,desiredCanvas.height);
+desiredCtx.fillStyle = '#8b9bb0';
+desiredCtx.font = '13px sans-serif'; desiredCtx.textAlign = 'center';
+desiredCtx.fillText('Upload an image to set the desired view', desiredCanvas.width/2, desiredCanvas.height/2);
+
+function drawFeatureOverlay(ctx, feats, color) {
+  if (!feats) return;
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  feats.forEach((f, i) => {
+    if (!f) return;
+    if (i === 0) ctx.moveTo(f.u, f.v); else ctx.lineTo(f.u, f.v);
+  });
+  ctx.closePath(); ctx.stroke();
+  feats.forEach((f) => {
+    if (!f) return;
+    ctx.beginPath(); ctx.arc(f.u, f.v, 4, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+// ---------- Linear algebra helpers ----------
+function matZeros(r, c) { return Array.from({length:r}, () => new Float64Array(c)); }
+function matT(A) {
+  const r = A.length, c = A[0].length;
+  const B = matZeros(c, r);
+  for (let i = 0; i < r; i++) for (let j = 0; j < c; j++) B[j][i] = A[i][j];
+  return B;
+}
+function matMul(A, B) {
+  const r = A.length, k = A[0].length, c = B[0].length;
+  const C = matZeros(r, c);
+  for (let i = 0; i < r; i++) {
+    for (let j = 0; j < c; j++) {
+      let s = 0;
+      for (let p = 0; p < k; p++) s += A[i][p] * B[p][j];
+      C[i][j] = s;
+    }
+  }
+  return C;
+}
+function matVec(A, x) {
+  const r = A.length, c = A[0].length;
+  const y = new Float64Array(r);
+  for (let i = 0; i < r; i++) {
+    let s = 0;
+    for (let j = 0; j < c; j++) s += A[i][j] * x[j];
+    y[i] = s;
+  }
+  return y;
+}
+// Damped Least Squares pseudo-inverse: A^+ = A^T (A A^T + mu^2 I)^-1
+// Works for both fat and tall matrices via the right form.
+function dlsPseudoInverse(A, mu) {
+  const r = A.length, c = A[0].length;
+  // Use right form (r x r system) when r <= c, else left form.
+  if (r <= c) {
+    const At = matT(A);
+    const AAt = matMul(A, At);
+    for (let i = 0; i < r; i++) AAt[i][i] += mu * mu;
+    const inv = matInv(AAt);
+    return matMul(At, inv);
+  } else {
+    const At = matT(A);
+    const AtA = matMul(At, A);
+    for (let i = 0; i < c; i++) AtA[i][i] += mu * mu;
+    const inv = matInv(AtA);
+    return matMul(inv, At);
+  }
+}
+// Square matrix inverse via Gauss-Jordan
+function matInv(M) {
+  const n = M.length;
+  const A = matZeros(n, 2*n);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) A[i][j] = M[i][j];
+    A[i][n+i] = 1;
+  }
+  for (let i = 0; i < n; i++) {
+    // Pivot
+    let piv = i;
+    for (let r = i+1; r < n; r++) if (Math.abs(A[r][i]) > Math.abs(A[piv][i])) piv = r;
+    if (Math.abs(A[piv][i]) < 1e-12) {
+      // Singular — add tiny noise on diag to keep going
+      A[piv][i] += 1e-9;
+    }
+    if (piv !== i) { const tmp = A[i]; A[i] = A[piv]; A[piv] = tmp; }
+    const div = A[i][i];
+    for (let j = 0; j < 2*n; j++) A[i][j] /= div;
+    for (let r = 0; r < n; r++) {
+      if (r === i) continue;
+      const f = A[r][i];
+      if (f === 0) continue;
+      for (let j = 0; j < 2*n; j++) A[r][j] -= f * A[i][j];
+    }
+  }
+  const Inv = matZeros(n, n);
+  for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) Inv[i][j] = A[i][n+j];
+  return Inv;
+}
+
+// ---------- IBVS interaction matrix ----------
+function buildInteractionMatrix(features) {
+  // features: array of {x, y, Z} (normalized) — possibly null
+  const L = matZeros(features.length * 2, 6);
+  for (let i = 0; i < features.length; i++) {
+    const f = features[i];
+    if (!f) continue;
+    const { x, y, Z } = f;
+    const row1 = L[2*i], row2 = L[2*i + 1];
+    row1[0] = -1/Z; row1[1] = 0;     row1[2] = x/Z;
+    row1[3] = x*y;  row1[4] = -(1+x*x); row1[5] = y;
+    row2[0] = 0;    row2[1] = -1/Z; row2[2] = y/Z;
+    row2[3] = 1 + y*y; row2[4] = -x*y; row2[5] = -x;
+  }
+  return L;
+}
+
+// ---------- Robot Jacobian (numerical) ----------
+// Returns 6x7 Jacobian mapping q_dot -> [vx,vy,vz, wx,wy,wz] of the
+// eye-in-hand camera frame, expressed in the camera frame.
+const tmpQuat = new THREE.Quaternion();
+const tmpQuatInv = new THREE.Quaternion();
+const tmpQuatDelta = new THREE.Quaternion();
+
+function getCameraPose() {
+  scene.updateMatrixWorld(true);
+  eyeCamera.updateMatrixWorld(true);
+  const pos = new THREE.Vector3();
+  const quat = new THREE.Quaternion();
+  eyeCamera.getWorldPosition(pos);
+  eyeCamera.getWorldQuaternion(quat);
+  return { pos, quat };
+}
+
+function quatToAxisAngle(q) {
+  // Returns rotation vector (axis * angle) in 3D
+  const x = q.x, y = q.y, z = q.z;
+  let w = q.w;
+  if (w > 1) w = 1; if (w < -1) w = -1;
+  const angle = 2 * Math.acos(w);
+  const s = Math.sqrt(1 - w*w);
+  if (s < 1e-6) return [0,0,0];
+  return [angle*x/s, angle*y/s, angle*z/s];
+}
+
+function computeRobotJacobian() {
+  // Numerical, central differences in joint space.
+  const eps = 1e-3;
+  const J = matZeros(6, 7);
+  const savedAngles = [...jointAngles];
+
+  // Reference pose
+  const refPose = getCameraPose();
+  const refRotInv = refPose.quat.clone().invert();
+
+  for (let j = 0; j < 7; j++) {
+    // +eps
+    jointAngles = [...savedAngles]; jointAngles[j] += eps;
+    applyJoints();
+    const pP = getCameraPose();
+    // -eps
+    jointAngles = [...savedAngles]; jointAngles[j] -= eps;
+    applyJoints();
+    const pM = getCameraPose();
+
+    // Linear velocity contribution (in WORLD frame), then express in cam frame
+    const dpW = pP.pos.clone().sub(pM.pos).multiplyScalar(1/(2*eps));
+    const dpC = dpW.clone().applyQuaternion(refRotInv);
+
+    // Angular velocity from quaternion difference
+    // q_delta = q_+ * q_-^{-1}, axis-angle / (2eps)
+    const qPlusRel = pP.quat.clone().multiply(refRotInv);   // rotation in world from ref to plus
+    const qMinusRel = pM.quat.clone().multiply(refRotInv);  // similarly
+    // Difference rotation: from minus to plus
+    const qDiff = qPlusRel.clone().multiply(qMinusRel.clone().invert());
+    const aa = quatToAxisAngle(qDiff);
+    const wW = [aa[0]/(2*eps), aa[1]/(2*eps), aa[2]/(2*eps)];
+    // Express in camera frame
+    const wW_v = new THREE.Vector3(wW[0], wW[1], wW[2]).applyQuaternion(refRotInv);
+
+    J[0][j] = dpC.x; J[1][j] = dpC.y; J[2][j] = dpC.z;
+    J[3][j] = wW_v.x; J[4][j] = wW_v.y; J[5][j] = wW_v.z;
+  }
+  // Restore state
+  jointAngles = [...savedAngles]; applyJoints();
+  return J;
+}
+
+// ============================================================
+// IBVS LOOP
+// ============================================================
+let ibvsRunning = false;
+let ibvsIter = 0;
+let errorHistory = []; // {t, norm, e[8]}
+let lastVelNorm = 0;
+
+const btnStart = document.getElementById('btnStart');
+const btnStop  = document.getElementById('btnStop');
+
+btnStart.onclick = () => {
+  if (!desiredImageLoaded) {
+    flashStatus('Please upload a desired image first', 'warn');
+    return;
+  }
+  ibvsRunning = true;
+  ibvsIter = 0;
+  errorHistory = [];
+  setStatus('IBVS running', 'ok');
+  document.getElementById('stMode').textContent = 'IBVS Active';
+};
+btnStop.onclick = () => {
+  ibvsRunning = false;
+  setStatus('Stopped', 'warn');
+  document.getElementById('stMode').textContent = 'Idle';
+};
+
+function setStatus(text, kind = 'ok') {
+  const pill = document.getElementById('statusPill');
+  document.getElementById('statusTxt').textContent = text;
+  pill.classList.remove('warn','err');
+  if (kind === 'warn') pill.classList.add('warn');
+  if (kind === 'err')  pill.classList.add('err');
+}
+function flashStatus(text, kind) {
+  setStatus(text, kind);
+  setTimeout(() => setStatus('Ready','ok'), 2200);
+}
+
+function ibvsStep(dt) {
+  if (!sStar) return;
+  scene.updateMatrixWorld(true);
+  const sNow = computeFeatures();
+  // Build error vector e in normalized coords (better conditioning)
+  const e = new Float64Array(8);
+  let validCount = 0;
+  for (let i = 0; i < 4; i++) {
+    if (sNow[i] && sStar[i]) {
+      e[2*i]   = sNow[i].x - sStar[i].x;
+      e[2*i+1] = sNow[i].y - sStar[i].y;
+      validCount++;
+    }
+  }
+  // Pixel-space norm for display
+  let pxNorm = 0;
+  for (let i = 0; i < 4; i++) {
+    if (sNow[i] && sStar[i]) {
+      const du = sNow[i].u - sStar[i].u;
+      const dv = sNow[i].v - sStar[i].v;
+      pxNorm += du*du + dv*dv;
+    }
+  }
+  pxNorm = Math.sqrt(pxNorm);
+
+  // Use mean of current and desired Z for L (Malis trick stabilizes)
+  const featForL = sNow.map((f, i) => {
+    if (!f || !sStar[i]) return null;
+    return { x: f.x, y: f.y, Z: 0.5*(f.Z + sStar[i].Z) };
+  });
+  const L = buildInteractionMatrix(featForL);
+
+  const lambda = parseFloat(document.getElementById('gainLambda').value) || 0.45;
+  const mu     = parseFloat(document.getElementById('dampMu').value)     || 0.02;
+
+  // vc = -lambda * L^+ * e   (camera twist in cam frame)
+  const Lplus = dlsPseudoInverse(L, mu);
+  const vc = matVec(Lplus, e);
+  for (let i = 0; i < 6; i++) vc[i] *= -lambda;
+
+  // Map to joint velocities through robot Jacobian (6x7)
+  const Jr = computeRobotJacobian();
+  const JrPlus = dlsPseudoInverse(Jr, mu);
+  const qdot = matVec(JrPlus, vc);
+
+  // Integrate joint angles, clamp to limits
+  const maxQdot = 2.0; // rad/s safety cap
+  for (let i = 0; i < 7; i++) {
+    let v = qdot[i];
+    if (v >  maxQdot) v =  maxQdot;
+    if (v < -maxQdot) v = -maxQdot;
+    jointAngles[i] += v * dt;
+    if (jointAngles[i] < jointLimits[i][0]) jointAngles[i] = jointLimits[i][0];
+    if (jointAngles[i] > jointLimits[i][1]) jointAngles[i] = jointLimits[i][1];
+  }
+  syncSlidersFromAngles();
+  applyJoints();
+
+  // Velocity magnitude (camera linear vel)
+  lastVelNorm = Math.sqrt(vc[0]*vc[0] + vc[1]*vc[1] + vc[2]*vc[2]);
+
+  ibvsIter++;
+  errorHistory.push({
+    t: ibvsIter,
+    norm: pxNorm,
+    e0: sNow[0] && sStar[0] ? Math.hypot(sNow[0].u - sStar[0].u, sNow[0].v - sStar[0].v) : 0,
+    e1: sNow[1] && sStar[1] ? Math.hypot(sNow[1].u - sStar[1].u, sNow[1].v - sStar[1].v) : 0,
+    e2: sNow[2] && sStar[2] ? Math.hypot(sNow[2].u - sStar[2].u, sNow[2].v - sStar[2].v) : 0,
+    e3: sNow[3] && sStar[3] ? Math.hypot(sNow[3].u - sStar[3].u, sNow[3].v - sStar[3].v) : 0,
+  });
+  if (errorHistory.length > 600) errorHistory.shift();
+
+  // UI updates
+  document.getElementById('stIter').textContent = ibvsIter;
+  document.getElementById('stErr').textContent  = pxNorm.toFixed(2);
+  document.getElementById('stVel').textContent  = lastVelNorm.toFixed(4);
+  document.getElementById('stFeat').textContent = `${validCount} / 4`;
+
+  // Convergence check
+  if (pxNorm < 2.0) {
+    document.getElementById('convBadge').textContent = 'Converged';
+    document.getElementById('convBadge').style.color = 'var(--ok)';
+    if (pxNorm < 0.5 && lastVelNorm < 0.001) {
+      ibvsRunning = false;
+      setStatus('Converged', 'ok');
+      document.getElementById('stMode').textContent = 'Converged';
+    }
+  } else if (pxNorm < 30) {
+    document.getElementById('convBadge').textContent = 'Approaching';
+    document.getElementById('convBadge').style.color = 'var(--warn)';
+  } else {
+    document.getElementById('convBadge').textContent = 'In progress';
+    document.getElementById('convBadge').style.color = 'var(--accent)';
+  }
+}
+
+// ============================================================
+// ERROR CHART
+// ============================================================
+const chartCanvas = document.getElementById('errorChart');
+const chartCtx = chartCanvas.getContext('2d');
+
+function drawChart() {
+  const dpr = window.devicePixelRatio || 1;
+  const r = chartCanvas.getBoundingClientRect();
+  if (chartCanvas.width !== Math.floor(r.width*dpr) || chartCanvas.height !== Math.floor(r.height*dpr)) {
+    chartCanvas.width = Math.floor(r.width*dpr); chartCanvas.height = Math.floor(r.height*dpr);
+  }
+  const W = chartCanvas.width, H = chartCanvas.height;
+  chartCtx.setTransform(1,0,0,1,0,0);
+  chartCtx.clearRect(0,0,W,H);
+
+  // Background
+  chartCtx.fillStyle = '#0d131c';
+  chartCtx.fillRect(0,0,W,H);
+
+  const padL = 50*dpr, padR = 16*dpr, padT = 12*dpr, padB = 26*dpr;
+  const pw = W - padL - padR, ph = H - padT - padB;
+
+  // Find max error
+  let maxE = 10;
+  for (const h of errorHistory) maxE = Math.max(maxE, h.norm, h.e0, h.e1, h.e2, h.e3);
+
+  // Grid
+  chartCtx.strokeStyle = '#1c2533'; chartCtx.lineWidth = 1*dpr;
+  chartCtx.fillStyle = '#5e6f88'; chartCtx.font = `${11*dpr}px JetBrains Mono, monospace`;
+  chartCtx.textAlign = 'right'; chartCtx.textBaseline = 'middle';
+  for (let i = 0; i <= 5; i++) {
+    const y = padT + (ph * i / 5);
+    chartCtx.beginPath(); chartCtx.moveTo(padL, y); chartCtx.lineTo(W-padR, y); chartCtx.stroke();
+    const v = maxE * (1 - i/5);
+    chartCtx.fillText(v.toFixed(1), padL - 6*dpr, y);
+  }
+  // X-axis label
+  chartCtx.textAlign = 'center'; chartCtx.textBaseline = 'top';
+  chartCtx.fillText('iteration', padL + pw/2, H - padB + 8*dpr);
+  // Y-axis label
+  chartCtx.save();
+  chartCtx.translate(14*dpr, padT + ph/2); chartCtx.rotate(-Math.PI/2);
+  chartCtx.textAlign = 'center'; chartCtx.textBaseline = 'top';
+  chartCtx.fillText('error (px)', 0, 0);
+  chartCtx.restore();
+
+  if (errorHistory.length < 2) return;
+
+  const N = errorHistory.length;
+  const xAt = (i) => padL + pw * (i / Math.max(N-1, 1));
+  const yAt = (v) => padT + ph * (1 - v / maxE);
+
+  function plot(key, color, width = 1.5) {
+    chartCtx.strokeStyle = color; chartCtx.lineWidth = width*dpr;
+    chartCtx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const x = xAt(i), y = yAt(errorHistory[i][key]);
+      if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
+    }
+    chartCtx.stroke();
+  }
+  plot('e0', '#00e5ff', 1.2);
+  plot('e1', '#7c5cff', 1.2);
+  plot('e2', '#2ecc71', 1.2);
+  plot('e3', '#f39c12', 1.2);
+  plot('norm', '#ff6b9d', 2.5);
+}
+
+// ============================================================
+// RENDER LOOP
+// ============================================================
+let lastT = performance.now();
+let fpsAcc = 0, fpsCount = 0;
+
+function resize() {
+  const r = canvas3D.getBoundingClientRect();
+  renderer.setSize(r.width, r.height, false);
+  camera.aspect = r.width / r.height;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function renderEyeView() {
+  // Render scene from eye-in-hand camera into render target
+  // Hide the camera body so it doesn't block the view
+  cameraBody.visible = false;
+  renderer.setRenderTarget(eyeRT);
+  renderer.render(scene, eyeCamera);
+  renderer.setRenderTarget(null);
+  cameraBody.visible = true;
+
+  // Read pixels into the 2D canvas for display
+  const buf = new Uint8Array(RT_W * RT_H * 4);
+  renderer.readRenderTargetPixels(eyeRT, 0, 0, RT_W, RT_H, buf);
+  // Flip Y when writing to canvas image data
+  const imgData = currentCtx.createImageData(RT_W, RT_H);
+  for (let y = 0; y < RT_H; y++) {
+    const srcRow = (RT_H - 1 - y) * RT_W * 4;
+    const dstRow = y * RT_W * 4;
+    for (let i = 0; i < RT_W * 4; i++) {
+      imgData.data[dstRow + i] = buf[srcRow + i];
+    }
+  }
+  currentCtx.putImageData(imgData, 0, 0);
+
+  // Overlay: draw current features (red dots + polygon)
+  const sNow = computeFeatures();
+  drawFeatureOverlay(currentCtx, sNow, '#00e5ff');
+  // Also overlay desired features as ghost (cross marks)
+  if (sStar) {
+    currentCtx.save();
+    currentCtx.strokeStyle = 'rgba(255,107,157,0.85)';
+    currentCtx.lineWidth = 1.5;
+    sStar.forEach(f => {
+      if (!f) return;
+      currentCtx.beginPath();
+      currentCtx.moveTo(f.u-6, f.v); currentCtx.lineTo(f.u+6, f.v);
+      currentCtx.moveTo(f.u, f.v-6); currentCtx.lineTo(f.u, f.v+6);
+      currentCtx.stroke();
+    });
+    currentCtx.restore();
+  }
+}
+
+function loop() {
+  const now = performance.now();
+  const dt = Math.min((now - lastT) / 1000, 0.05);
+  lastT = now;
+
+  // FPS
+  fpsAcc += dt; fpsCount++;
+  if (fpsAcc >= 0.5) {
+    document.getElementById('fpsTxt').textContent = (fpsCount / fpsAcc).toFixed(0);
+    fpsAcc = 0; fpsCount = 0;
+  }
+
+  controls.update();
+
+  if (ibvsRunning) {
+    // Use a fixed control dt for stability of the integrator
+    ibvsStep(0.05);
+  }
+
+  // Update telemetry
+  const eePos = new THREE.Vector3();
+  cameraBody.getWorldPosition(eePos);
+  document.getElementById('eePos').textContent =
+    `x=${eePos.x.toFixed(3)}  y=${eePos.y.toFixed(3)}  z=${eePos.z.toFixed(3)}`;
+  document.getElementById('camPose').textContent =
+    `eye-in-hand · target on table at (0.55, 0.31, 0.00)`;
+
+  // Render main view
+  renderer.render(scene, camera);
+
+  // Render eye-in-hand view
+  renderEyeView();
+
+  // Chart
+  drawChart();
+
+  requestAnimationFrame(loop);
+}
+loop();
+
+// Re-capture desired features (without uploaded image) so initial
+// chart isn't crazy when user clicks Start before upload.
+captureDesiredFeatures();
+
+</script>
+</body>
+</html>
