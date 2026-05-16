@@ -1084,7 +1084,7 @@ let ibvsTime = 0;
 let lambda = 0.6;
 
 // Table position (where desired image is placed)
-const tablePos = [0.15, 0.01, 0.15];
+const tablePos = [0.25, 0.01, 0.25];
 const tableSize = 0.15;
 
 // 4 corner feature points on the table (3D world coords)
@@ -1244,7 +1244,7 @@ function startIBVS() {
 
   // Set desired features: project points from a "desired" camera pose
   // The desired pose is the end-effector looking directly down at the table
-  const desiredAngles = [0.3, 0.4, 0, -0.5, 0, 0.3, 0];
+  const desiredAngles = [0.785, 0.8, 0, -0.5, 0, -0.3, 0];
   const desiredPose = getEndEffectorPose(desiredAngles);
   const points3D = getDesiredPoints3D();
 
@@ -1256,12 +1256,12 @@ function startIBVS() {
   }
 
   // Set initial joint angles to a different pose
-  jointAngles[0] = -0.2;
-  jointAngles[1] = 0.6;
-  jointAngles[2] = 0.3;
-  jointAngles[3] = -0.3;
+  jointAngles[0] = 0.5;
+  jointAngles[1] = 0.5;
+  jointAngles[2] = 0.2;
+  jointAngles[3] = -0.4;
   jointAngles[4] = 0.1;
-  jointAngles[5] = 0.2;
+  jointAngles[5] = -0.1;
   jointAngles[6] = 0.0;
   updateSlidersFromAngles();
 
