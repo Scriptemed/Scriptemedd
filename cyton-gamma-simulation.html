@@ -751,7 +751,10 @@ function computeFK(angles) {
 // Separate EE pose computation with its own pool to avoid conflicts with render-loop FK
 const _eePoolMats = [];
 for (let i = 0; i < 20; i++) _eePoolMats.push(new Float32Array(16));
-function getEndEffectorPose(angles) {
+// Pre-allocated output buffers for Jacobian calls to avoid per-call allocation
+const _jacT0 = new Float32Array(16);
+const _jacTp = new Float32Array(16);
+function getEndEffectorPose(angles, outBuffer) {
   let pidx = 0;
   function pm() { return _eePoolMats[pidx++ % 20]; }
 
@@ -777,7 +780,11 @@ function getEndEffectorPose(angles) {
   const tEE = pm(); M4.translate(tEE, [0, linkLengths[7], 0]);
   M4.multiply(current, current, tEE);
 
-  // Return a copy since pool is reused
+  // Write into caller-supplied buffer if provided; otherwise allocate (for non-hot paths)
+  if (outBuffer) {
+    outBuffer.set(current);
+    return outBuffer;
+  }
   const result = new Float32Array(16);
   result.set(current);
   return result;
@@ -793,7 +800,7 @@ function computeJacobian(angles) {
   // Numerical Jacobian (6x7): maps joint velocities to end-effector twist (world frame)
   const eps = 0.0001;
   const J = [];
-  const T0 = getEndEffectorPose(angles);
+  const T0 = getEndEffectorPose(angles, _jacT0);
   const p0 = [T0[12], T0[13], T0[14]];
 
   // Extract 3x3 rotation from T0 (column-major 4x4)
@@ -804,7 +811,7 @@ function computeJacobian(angles) {
   for (let i = 0; i < 7; i++) {
     const anglesP = angles.slice();
     anglesP[i] += eps;
-    const Tp = getEndEffectorPose(anglesP);
+    const Tp = getEndEffectorPose(anglesP, _jacTp);
 
     // Linear velocity column
     const dp = [(Tp[12] - p0[0]) / eps, (Tp[13] - p0[1]) / eps, (Tp[14] - p0[2]) / eps];
@@ -848,12 +855,16 @@ function computeJacobian(angles) {
 }
 
 // ===== CAMERA-TO-WORLD FRAME ROTATION (Fix 2) =====
-// The interaction matrix produces velocity in camera frame where:
-//   camera optical axis = arm local -Y
-//   camera x-axis = arm local X
-//   camera y-axis = arm local Z
+// Convention derivation (see also projectPoint):
+//   In projectPoint, depth Z = -p[1] (arm local -Y), image x = p[0]/Z (arm X), image y = p[2]/Z (arm Z).
+//   The interaction matrix assumes velocity indices: [vx_c, vy_c, vz_c, wx_c, wy_c, wz_c]
+//   where vz_c is along the optical axis. Mapping from interaction-matrix frame to arm-local (EE) frame:
+//     vz_c (optical/depth axis) corresponds to arm -Y => vy_ee = -vz_c
+//     vx_c corresponds to arm X => vx_ee = vx_c
+//     vy_c corresponds to arm Z => vz_ee = vy_c
+//   This gives the camera-to-EE rotation matrix: [1 0 0; 0 0 -1; 0 1 0]
+//   The EE rotation then maps from EE-local to world frame.
 // The robot Jacobian expects world-frame twist.
-// We need to rotate camera-frame velocity to world frame using the EE rotation.
 function rotateCamVelToWorld(camVel, eePose) {
   // Extract the 3x3 rotation from the EE pose (column-major 4x4)
   // The camera frame convention: camera Z (depth) maps to arm -Y
@@ -1102,15 +1113,34 @@ function ibvsStep(dt) {
     dq.push(sum);
   }
 
-  // Integrate
+  // Integrate with joint-limit aware velocity scaling
   const maxDq = 1.5; // rad/s limit
+  const limitRampDeg = 5; // degrees: ramp zone before hard limit
+  const limitRampRad = limitRampDeg * Math.PI / 180;
   for (let i = 0; i < 7; i++) {
     let vel = dq[i];
     vel = Math.max(-maxDq, Math.min(maxDq, vel));
+
+    // Joint-limit aware scaling: linearly attenuate velocity when near a limit
+    // and the velocity pushes toward that limit, preventing stall/oscillation.
+    const limLow = jointLimits[i][0] * Math.PI / 180;
+    const limHigh = jointLimits[i][1] * Math.PI / 180;
+    const distToLow = jointAngles[i] - limLow;
+    const distToHigh = limHigh - jointAngles[i];
+
+    if (vel < 0 && distToLow < limitRampRad) {
+      // Moving toward lower limit and within ramp zone
+      const scale = Math.max(0, distToLow / limitRampRad);
+      vel *= scale;
+    } else if (vel > 0 && distToHigh < limitRampRad) {
+      // Moving toward upper limit and within ramp zone
+      const scale = Math.max(0, distToHigh / limitRampRad);
+      vel *= scale;
+    }
+
     jointAngles[i] += vel * dt;
-    // Clamp to limits
-    const limRad = [jointLimits[i][0] * Math.PI / 180, jointLimits[i][1] * Math.PI / 180];
-    jointAngles[i] = Math.max(limRad[0], Math.min(limRad[1], jointAngles[i]));
+    // Hard clamp as safety net (should rarely trigger due to ramp)
+    jointAngles[i] = Math.max(limLow, Math.min(limHigh, jointAngles[i]));
   }
 
   // Update sliders
