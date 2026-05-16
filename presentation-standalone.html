@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Direct Visual Servoing Using Multiscale Decomposition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;1,400;1,500;1,600&display=swap" rel="stylesheet">
+  <style>
+/* =====================================================
+   PRESENTATION — Direct Visual Servoing using Multiscale Decomposition
+   Design system : dark tech, cyan/magenta accents, glass cards
+   ===================================================== */
+
+:root{
+  --bg-0: #04060f;
+  --bg-1: #0a1024;
+  --bg-2: #0f1733;
+  --surface: rgba(255,255,255,0.04);
+  --surface-strong: rgba(255,255,255,0.07);
+  --border: rgba(125,249,255,0.18);
+  --border-strong: rgba(125,249,255,0.4);
+  --text: #e8f1ff;
+  --text-dim: #9bb0d4;
+  --text-mute: #6b7fa8;
+  --cyan: #7df9ff;
+  --cyan-strong: #00d4ff;
+  --blue: #4d7dff;
+  --magenta: #ff6b9d;
+  --gold: #ffd166;
+  --green: #6bffaf;
+  --shadow: 0 20px 60px -20px rgba(0,212,255,0.25);
+  --radius: 18px;
+  --radius-sm: 12px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+html,body{
+  height:100%;
+  overflow:hidden;
+  background: var(--bg-0);
+  color: var(--text);
+  font-family: 'Space Grotesk', -apple-system, system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ===== Background layers ===== */
+.bg-layer{
+  position:fixed; inset:0; z-index:0; overflow:hidden;
+  background:
+    radial-gradient(1200px 800px at 80% -10%, rgba(0,102,255,0.18), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, rgba(255,107,157,0.12), transparent 60%),
+    linear-gradient(180deg, var(--bg-0), var(--bg-1));
+}
+.bg-grid{
+  position:absolute; inset:-2px;
+  background-image:
+    linear-gradient(rgba(125,249,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125,249,255,0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%);
+}
+.bg-glow{
+  position:absolute; border-radius:50%; filter: blur(80px); opacity:.5;
+  animation: float 18s ease-in-out infinite;
+}
+.glow-1{ width:520px; height:520px; background:#0066ff; top:-120px; right:-100px; }
+.glow-2{ width:420px; height:420px; background:#ff6b9d; bottom:-80px; left:-80px; animation-delay:-6s; }
+.glow-3{ width:300px; height:300px; background:#7df9ff; top:50%; left:60%; animation-delay:-12s; opacity:.25;}
+
+@keyframes float{
+  0%,100%{ transform: translate(0,0) scale(1); }
+  50%   { transform: translate(30px,-20px) scale(1.08); }
+}
+
+/* ===== Top progress + counter + brand ===== */
+.progress-bar{
+  position:fixed; top:0; left:0; right:0; height:3px;
+  background: rgba(255,255,255,0.05); z-index:50;
+}
+.progress-fill{
+  height:100%; width:10%;
+  background: linear-gradient(90deg, var(--cyan), var(--blue), var(--magenta));
+  box-shadow: 0 0 12px var(--cyan-strong);
+  transition: width .55s cubic-bezier(.65,.05,.36,1);
+}
+
+.slide-counter{
+  position:fixed; top:22px; right:28px; z-index:40;
+  font-family:'JetBrains Mono', monospace; font-size:13px;
+  color: var(--text-dim); letter-spacing:.05em;
+  background: var(--surface); border:1px solid var(--border);
+  padding:8px 14px; border-radius:999px;
+  backdrop-filter: blur(10px);
+}
+.slide-counter #currentSlide{ color: var(--cyan); font-weight:600; }
+.slide-counter .sep{ margin:0 4px; opacity:.4; }
+
+.brand-badge{
+  position:fixed; top:22px; left:28px; z-index:40;
+  display:flex; align-items:center; gap:10px;
+  font-size:12px; letter-spacing:.18em; text-transform:uppercase;
+  color: var(--text-dim);
+  background: var(--surface); border:1px solid var(--border);
+  padding:8px 14px; border-radius:999px;
+  backdrop-filter: blur(10px);
+}
+.brand-dot{
+  width:8px; height:8px; border-radius:50%;
+  background: var(--cyan); box-shadow: 0 0 12px var(--cyan);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ===== Nav buttons ===== */
+.nav-btn{
+  position:fixed; top:50%; transform: translateY(-50%); z-index:45;
+  width:48px; height:48px; border-radius:50%;
+  background: var(--surface-strong); border:1px solid var(--border);
+  color: var(--text); cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter: blur(10px);
+  transition: all .25s ease;
+}
+.nav-btn:hover{ border-color: var(--cyan); color: var(--cyan); transform: translateY(-50%) scale(1.08); }
+.nav-btn svg{ width:22px; height:22px; }
+.nav-prev{ left:24px; }
+.nav-next{ right:24px; }
+.nav-btn:disabled{ opacity:.25; cursor:not-allowed; }
+
+/* ===== Dots nav ===== */
+.dots-nav{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+  display:flex; gap:8px; z-index:40;
+  background: var(--surface); border:1px solid var(--border);
+  padding:8px 14px; border-radius:999px; backdrop-filter: blur(10px);
+}
+.dot{
+  width:8px; height:8px; border-radius:50%;
+  background: rgba(255,255,255,.18); cursor:pointer;
+  transition: all .3s;
+}
+.dot:hover{ background: var(--text-dim); }
+.dot.active{
+  width:28px; border-radius:4px;
+  background: linear-gradient(90deg, var(--cyan), var(--blue));
+  box-shadow: 0 0 10px var(--cyan-strong);
+}
+
+/* ===== Slide system ===== */
+.slides{
+  position:relative; z-index:1;
+  width:100vw; height:100vh;
+}
+.slide{
+  position:absolute; inset:0;
+  padding: 80px 90px 80px;
+  display:flex; flex-direction:column;
+  opacity:0; pointer-events:none;
+  transform: translateY(30px) scale(.985);
+  transition: opacity .55s ease, transform .65s cubic-bezier(.2,.8,.2,1);
+  overflow:auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.slide::-webkit-scrollbar{ width:0; height:0; display:none; }
+.slide.active{
+  opacity:1; pointer-events:auto;
+  transform: translateY(0) scale(1);
+}
+
+/* slide 10 (architecture) — fit on screen, no scroll */
+.slide[data-slide="10"]{
+  padding: 70px 50px 70px;
+}
+.slide[data-slide="10"] .slide-header{
+  margin-bottom: 18px;
+}
+.slide[data-slide="10"] .slide-title{
+  font-size: clamp(28px, 3.4vw, 44px);
+}
+.slide[data-slide="10"] .slide-lede{
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+/* ===== Slide header (shared) ===== */
+.slide-header{
+  margin-bottom: 32px;
+  animation: slideIn .7s .15s both ease-out;
+}
+.slide-tag{
+  display:inline-flex; align-items:center; gap:8px;
+  font-family:'JetBrains Mono', monospace; font-size:12px;
+  letter-spacing:.2em; text-transform:uppercase;
+  color: var(--cyan);
+  background: rgba(125,249,255,.08);
+  border:1px solid var(--border);
+  padding:6px 14px; border-radius:999px;
+  margin-bottom:14px;
+}
+.slide-tag.tag-warn{ color: var(--magenta); background: rgba(255,107,157,.08); border-color: rgba(255,107,157,.3); }
+.slide-tag.tag-success{ color: var(--green); background: rgba(107,255,175,.08); border-color: rgba(107,255,175,.3); }
+
+.slide-title{
+  font-size: clamp(34px, 4.2vw, 56px);
+  font-weight: 700;
+  letter-spacing:-.02em;
+  line-height:1.05;
+  background: linear-gradient(180deg, #fff 30%, #9bb0d4 130%);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+.slide-lede{
+  margin-top:10px;
+  font-size: clamp(15px, 1.2vw, 18px);
+  color: var(--text-dim);
+  max-width: 760px;
+}
+
+/* ===== SHINE TEXT (gradient sweep) ===== */
+.shine{
+  background: linear-gradient(90deg, var(--cyan) 0%, #fff 50%, var(--cyan) 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+  animation: shineMove 4s linear infinite;
+}
+@keyframes shineMove{ from{ background-position: 200% 0; } to{ background-position: -200% 0; } }
+
+/* ============================================
+   SLIDE 1 — TITLE
+   ============================================ */
+.slide-title.active{ /* override only when active */ }
+.title-grid{
+  display:grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 60px;
+  align-items:center;
+  flex:1;
+  margin-top: 20px;
+}
+.chip{
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:'JetBrains Mono', monospace; font-size:12px;
+  letter-spacing:.18em; text-transform:uppercase;
+  color: var(--cyan);
+  background: rgba(125,249,255,.08);
+  border:1px solid var(--border);
+  padding:8px 16px; border-radius:999px;
+}
+.chip-pulse{
+  width:8px; height:8px; border-radius:50%;
+  background: var(--cyan);
+  box-shadow: 0 0 0 0 var(--cyan);
+  animation: pulse 2s ease-out infinite;
+}
+@keyframes pulse{
+  0%   { box-shadow: 0 0 0 0 rgba(125,249,255,.7); }
+  70%  { box-shadow: 0 0 0 10px rgba(125,249,255,0); }
+  100% { box-shadow: 0 0 0 0 rgba(125,249,255,0); }
+}
+
+.hero-title{
+  margin-top: 24px;
+  font-size: clamp(48px, 6.5vw, 96px);
+  font-weight:700; line-height:.98; letter-spacing:-.035em;
+}
+.title-line{ display:block; }
+.title-accent{
+  display:block;
+  margin-top:8px;
+  font-size: .4em;
+  font-weight:500;
+  color: var(--text-dim);
+  letter-spacing:0;
+}
+.hero-subtitle{
+  margin-top: 22px;
+  font-size: 19px;
+  color: var(--text-dim);
+  max-width: 560px;
+  line-height:1.55;
+}
+.hero-subtitle strong{ color: var(--cyan); font-weight:600; }
+
+.authors-label{
+  margin-top: 30px;
+  font-family:'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 10px;
+}
+.authors{
+  display:flex; gap:24px; flex-wrap:wrap;
+}
+.author{
+  display:flex; align-items:center; gap:12px;
+  background: var(--surface);
+  border:1px solid var(--border);
+  padding:10px 16px 10px 10px; border-radius: 999px;
+  backdrop-filter: blur(8px);
+  transition: all .3s;
+}
+.author:hover{ border-color: var(--cyan); transform: translateY(-2px); }
+.avatar{
+  width:38px; height:38px; border-radius:50%;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  color: var(--bg-0); font-weight:700; font-size:13px;
+  display:flex; align-items:center; justify-content:center;
+}
+.avatar-alt{ background: linear-gradient(135deg, var(--magenta), #b04dff); color:#fff; }
+.author-name{ font-weight:600; font-size:14px; }
+.author-role{ font-size:11px; color: var(--text-mute); letter-spacing:.1em; text-transform:uppercase; }
+
+.meta-row{
+  display:flex; gap: 36px; margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.meta-item{ display:flex; flex-direction:column; gap:4px; }
+.meta-item span{ font-size:11px; color: var(--text-mute); letter-spacing:.18em; text-transform:uppercase; }
+.meta-item strong{ font-size:15px; font-weight:600; color: var(--text); }
+
+/* hero visual */
+.title-right{ display:flex; align-items:center; justify-content:center; }
+.hero-visual{
+  position: relative; width: 420px; height: 420px;
+  display:flex; align-items:center; justify-content:center;
+}
+.ring{
+  position:absolute; border-radius:50%;
+  border:1px solid var(--border);
+}
+.ring-1{ width: 100%; height: 100%; animation: spinSlow 30s linear infinite; border-style: dashed; }
+.ring-2{ width: 80%; height: 80%; border-color: rgba(125,249,255,.25); animation: spinSlow 22s linear infinite reverse; }
+.ring-3{ width: 60%; height: 60%; border-color: rgba(77,125,255,.4); animation: spinSlow 18s linear infinite; }
+.ring-4{ width: 40%; height: 40%; border-color: rgba(255,107,157,.35); animation: spinSlow 14s linear infinite reverse; }
+@keyframes spinSlow{ to{ transform: rotate(360deg); } }
+
+.hero-core{
+  width: 30%; height: 30%;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background: radial-gradient(circle, rgba(0,212,255,.4), transparent 70%);
+  filter: drop-shadow(0 0 30px var(--cyan-strong));
+  animation: corePulse 3.2s ease-in-out infinite;
+}
+.eye-svg{ width: 100%; height:100%; }
+@keyframes corePulse{
+  0%,100%{ transform: scale(1); }
+  50%   { transform: scale(1.08); }
+}
+.scan-line{
+  position:absolute; top:0; left:0; width:100%; height:2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  animation: scan 3.5s ease-in-out infinite;
+}
+@keyframes scan{
+  0%   { top:0; opacity:0; }
+  10%  { opacity:1; }
+  90%  { opacity:1; }
+  100% { top:100%; opacity:0; }
+}
+
+.footer-hint{
+  position:absolute; bottom: 90px; left:50%; transform:translateX(-50%);
+  font-size:13px; color: var(--text-mute); letter-spacing:.1em;
+  animation: bobble 2.4s ease-in-out infinite;
+}
+.footer-hint kbd{
+  background: var(--surface-strong);
+  border:1px solid var(--border);
+  padding:2px 8px; border-radius:6px;
+  font-family:'JetBrains Mono', monospace; font-size:12px;
+  color: var(--cyan);
+}
+@keyframes bobble{ 0%,100%{ transform: translateX(-50%) translateY(0);} 50%{ transform: translateX(-50%) translateY(-6px);} }
+
+/* ============================================
+   SLIDE 2 — Contexte
+   ============================================ */
+.two-col{
+  display:grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 32px;
+  flex:1;
+  animation: slideIn .7s .25s both ease-out;
+}
+.col{ display:flex; flex-direction:column; gap:20px; }
+
+.info-card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 28px;
+  backdrop-filter: blur(10px);
+  transition: all .35s;
+  position:relative; overflow:hidden;
+}
+.info-card::before{
+  content:""; position:absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  transform: translateX(-100%); transition: transform .6s;
+}
+.info-card:hover{ border-color: var(--border-strong); transform: translateY(-3px); box-shadow: var(--shadow); }
+.info-card:hover::before{ transform: translateX(100%); }
+.card-icon{
+  width:46px; height:46px; border-radius: 12px;
+  background: rgba(125,249,255,.1);
+  border:1px solid var(--border);
+  color: var(--cyan);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:16px;
+}
+.card-icon svg{ width:24px; height:24px; }
+.info-card h3{ font-size:20px; font-weight:600; margin-bottom:8px; }
+.info-card p{ color: var(--text-dim); line-height:1.6; font-size:15px; }
+.info-card em{ color: var(--cyan); font-style:normal; font-weight:500; }
+.info-card strong{ color: var(--text); }
+
+.config-card{
+  background: linear-gradient(140deg, rgba(125,249,255,.06), rgba(77,125,255,.03));
+  border:1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 28px 30px;
+  flex:1;
+  position:relative; overflow:hidden;
+}
+.config-tag{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px; letter-spacing:.22em; text-transform:uppercase;
+  color: var(--cyan); margin-bottom:6px;
+}
+.config-title{
+  font-size: 30px; font-weight:700; line-height:1;
+}
+.config-en{
+  font-style: italic; color: var(--text-dim); margin-top:4px;
+  font-size:16px; letter-spacing:.02em;
+}
+.robot-scene{
+  margin: 18px 0;
+  background: rgba(0,0,0,.25);
+  border:1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+.robot-svg{ width:100%; height:auto; }
+.target-pulse{ animation: targetPulse 2s ease-in-out infinite; transform-origin: 80px 195px; }
+@keyframes targetPulse{
+  0%,100%{ r:6; opacity:1; }
+  50%   { r:9; opacity:.6; }
+}
+
+.check-list{ list-style:none; display:flex; flex-direction:column; gap:8px; margin-top:14px; }
+.check-list li{
+  position:relative; padding-left: 26px;
+  color: var(--text-dim); font-size:14.5px; line-height:1.5;
+}
+.check-list li::before{
+  content:"✓";
+  position:absolute; left:0; top:0;
+  width:18px; height:18px; border-radius:50%;
+  background: rgba(107,255,175,.12);
+  color: var(--green);
+  display:flex; align-items:center; justify-content:center;
+  font-size: 11px; font-weight:700;
+}
+
+/* ============================================
+   SLIDE 3 — Problématique
+   ============================================ */
+.problem-grid{
+  display:grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  flex:1;
+  animation: slideIn .7s .2s both ease-out;
+}
+.problem-card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 26px 22px;
+  display:flex; flex-direction:column;
+  transition: all .35s;
+  position:relative;
+}
+.problem-card:hover{ transform: translateY(-4px); border-color: var(--magenta); }
+.problem-card.alert{ border-color: rgba(255,107,157,.4); background: rgba(255,107,157,.04); }
+.prob-num{
+  font-family:'JetBrains Mono', monospace;
+  color: var(--magenta);
+  font-size:13px; letter-spacing:.18em;
+  margin-bottom: 10px;
+}
+.problem-card h3{ font-size:19px; font-weight:600; margin-bottom: 8px; }
+.problem-card p{ color: var(--text-dim); font-size:14.5px; line-height:1.6; flex:1; }
+.problem-card strong{ color: var(--gold); }
+
+.lum-demo{
+  margin-top:16px; display:flex; align-items:center; gap:10px; justify-content:center;
+}
+.lum-cell{
+  width:64px; height:64px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+  border:1px solid var(--border);
+}
+.lum-bright{ background: linear-gradient(135deg, #fff8dc, #ffd166); color:#5b4500; }
+.lum-dark  { background: linear-gradient(135deg, #1a2238, #0a0e1f); color: var(--text-dim); }
+.lum-arrow{ color: var(--cyan); font-size:22px; }
+
+.wave-demo{ margin-top:16px; padding: 8px; background: rgba(0,0,0,.2); border-radius:10px; }
+.wave-svg{ width:100%; height:50px; }
+
+.glare-demo{
+  margin-top:16px; height:80px; border-radius:10px;
+  background: rgba(0,0,0,.3); border:1px solid rgba(255,107,157,.3);
+  position:relative; overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.glare-flash{
+  position:absolute; inset:-50%;
+  background: radial-gradient(circle, rgba(255,255,200,.85), transparent 60%);
+  animation: glareFlash 2.6s ease-in-out infinite;
+}
+@keyframes glareFlash{
+  0%,80%,100%{ opacity:0; transform: scale(.4);}
+  85%       { opacity:.9; transform: scale(1);}
+}
+.glare-label{
+  position:relative; z-index:2;
+  font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:700;
+  color: var(--magenta); letter-spacing:.15em;
+}
+
+.quote-box{
+  margin-top: 28px;
+  background: linear-gradient(120deg, rgba(125,249,255,.08), rgba(255,107,157,.06));
+  border:1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 24px 30px;
+  font-size: 19px; color: var(--text);
+  position:relative; padding-left: 56px;
+  animation: slideIn .7s .5s both ease-out;
+}
+.quote-box strong{ color: var(--cyan); }
+.quote-mark{
+  position:absolute; left: 18px; top: 6px;
+  font-size: 64px; color: var(--cyan); opacity:.4;
+  font-family: Georgia, serif; line-height:1;
+}
+
+/* ============================================
+   SLIDE 4 — Objectifs
+   ============================================ */
+.objectives{
+  display:grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  flex:1; align-content:center;
+  animation: slideIn .7s .2s both ease-out;
+}
+.obj-card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  position:relative; overflow:hidden;
+  transition: all .4s;
+}
+.obj-card:hover{ transform: translateY(-6px); border-color: var(--cyan); }
+.obj-card.highlight{
+  background: linear-gradient(160deg, rgba(125,249,255,.1), rgba(77,125,255,.04));
+  border-color: var(--border-strong);
+  box-shadow: 0 20px 60px -30px rgba(0,212,255,.5);
+}
+.obj-card.highlight::after{
+  content:""; position:absolute; inset:0;
+  background: radial-gradient(400px 200px at 50% 0%, rgba(125,249,255,.15), transparent);
+  pointer-events:none;
+}
+.obj-icon{
+  width:56px; height:56px; border-radius:14px;
+  background: rgba(125,249,255,.1);
+  border:1px solid var(--border);
+  color: var(--cyan);
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom: 18px;
+}
+.obj-icon svg{ width:28px; height:28px; }
+.obj-step{
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  letter-spacing:.22em; text-transform:uppercase;
+  color: var(--text-mute); margin-bottom:6px;
+}
+.obj-card h3{ font-size: 22px; font-weight:600; margin-bottom:10px; line-height:1.2; }
+.obj-card p{ color: var(--text-dim); font-size:15px; line-height:1.6; }
+.obj-card strong{ color: var(--cyan); font-weight:600; }
+
+/* ============================================
+   SLIDE 5 — Approches IBVS / PBVS / PVS
+   ============================================ */
+.approach-grid{
+  display:grid; grid-template-columns: repeat(3, 1fr); gap:22px;
+  flex:1; align-content:center;
+  animation: slideIn .7s .2s both ease-out;
+}
+.approach-card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  position:relative; overflow:hidden;
+  transition: all .4s;
+}
+.approach-card:hover{ transform: translateY(-6px); }
+.approach-card.featured{
+  background: linear-gradient(170deg, rgba(125,249,255,.12), rgba(77,125,255,.04));
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+.featured-badge{
+  position:absolute; top:14px; right:14px;
+  font-family:'JetBrains Mono', monospace; font-size:10px;
+  letter-spacing:.2em; text-transform:uppercase;
+  color: var(--bg-0); background: var(--cyan);
+  padding: 4px 10px; border-radius: 999px;
+  font-weight:700;
+}
+.approach-tag{
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  letter-spacing:.18em; text-transform:uppercase;
+  color: var(--text-mute); margin-bottom: 10px;
+}
+.approach-card h3{
+  font-size: 38px; font-weight:700; line-height:1;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  -webkit-background-clip: text; background-clip:text; color:transparent;
+}
+.approach-en{
+  font-style:italic; color: var(--text-dim); font-size:14px;
+  margin-top:4px; margin-bottom: 14px;
+}
+.approach-card p{ color: var(--text-dim); font-size:14.5px; line-height:1.6; }
+.approach-card strong{ color: var(--text); }
+
+.approach-illu{
+  margin-top: 18px; padding: 14px;
+  background: rgba(0,0,0,.2);
+  border-radius: var(--radius-sm); border:1px solid var(--border);
+  height: 110px;
+  display:flex; align-items:center; justify-content:center;
+}
+.approach-2d{ position:relative; }
+.approach-2d .dot{
+  width:12px; height:12px; border-radius:50%;
+  background: var(--cyan); box-shadow: 0 0 10px var(--cyan);
+  margin: 0 14px;
+  animation: dotFloat 2.4s ease-in-out infinite;
+}
+.approach-2d .dot:nth-child(2){ animation-delay:.2s; }
+.approach-2d .dot:nth-child(3){ animation-delay:.4s; }
+.approach-2d .dot:nth-child(4){ animation-delay:.6s; }
+@keyframes dotFloat{
+  0%,100%{ transform: translateY(0); }
+  50%   { transform: translateY(-12px); }
+}
+
+.approach-3d{ perspective: 600px; }
+.cube{
+  width:60px; height:60px; position:relative; transform-style: preserve-3d;
+  animation: cubeSpin 8s linear infinite;
+}
+@keyframes cubeSpin{ to{ transform: rotateX(360deg) rotateY(720deg); } }
+.face{
+  position:absolute; width:60px; height:60px;
+  background: rgba(125,249,255,.1);
+  border:1px solid var(--cyan);
+}
+.face.front  { transform: translateZ(30px); }
+.face.back   { transform: translateZ(-30px) rotateY(180deg); }
+.face.right  { transform: rotateY( 90deg) translateZ(30px); }
+.face.left   { transform: rotateY(-90deg) translateZ(30px); }
+.face.top    { transform: rotateX( 90deg) translateZ(30px); }
+.face.bottom { transform: rotateX(-90deg) translateZ(30px); }
+
+.px-grid{
+  display:grid; grid-template-columns: repeat(4, 16px); gap: 3px;
+}
+.px-grid span{
+  width:16px; height:16px; border-radius:3px;
+  background: rgba(125,249,255,.15);
+  animation: pxBlink 2.5s ease-in-out infinite;
+}
+.px-grid span:nth-child(odd){ animation-delay:.3s; background: rgba(125,249,255,.35); }
+.px-grid span:nth-child(3n) { animation-delay:.6s; background: rgba(255,107,157,.4); }
+.px-grid span:nth-child(5n) { animation-delay:.9s; background: rgba(255,209,102,.4); }
+@keyframes pxBlink{
+  0%,100%{ opacity:.4; }
+  50%   { opacity:1; }
+}
+
+/* ============================================
+   SLIDE 6 — Fourier
+   ============================================ */
+.fourier-layout{
+  display:grid; grid-template-columns: 1fr auto 1fr;
+  gap: 24px; align-items:stretch;
+  animation: slideIn .7s .2s both ease-out;
+}
+.fourier-card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 26px 28px;
+}
+.fourier-card.warn{ border-color: rgba(255,107,157,.35); }
+.fourier-card h3{ font-size: 20px; margin-bottom: 8px; }
+.fourier-card p{ color: var(--text-dim); font-size: 14.5px; line-height:1.6; margin-bottom: 14px; }
+.fourier-card strong{ color: var(--cyan); }
+.fourier-card.warn strong{ color: var(--magenta); }
+.fourier-card em{ color: var(--gold); font-style:normal; }
+.signal-svg{
+  width:100%; height: 80px; padding: 8px;
+  background: rgba(0,0,0,.25); border-radius:10px; border:1px solid var(--border);
+}
+.formula{
+  margin-top: 14px;
+  background: rgba(0,0,0,.35); border:1px solid var(--border);
+  border-radius: 10px; padding: 12px 14px;
+  font-family:'JetBrains Mono', monospace; font-size:13px;
+  color: var(--cyan); letter-spacing:.02em;
+}
+.warn-text{ margin-top: 12px; color: var(--text-dim) !important; }
+
+.vs-divider{
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono', monospace;
+  font-weight:700; font-size:14px;
+  color: var(--text-mute); letter-spacing:.2em;
+  position:relative;
+}
+.vs-divider span{
+  width:42px; height:42px; border-radius:50%;
+  background: var(--surface-strong);
+  border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+}
+.vs-divider::before, .vs-divider::after{
+  content:""; position:absolute; left:50%; transform:translateX(-50%);
+  width:1px; background: var(--border);
+}
+.vs-divider::before{ top:0; height: calc(50% - 28px); }
+.vs-divider::after { bottom:0; height: calc(50% - 28px); }
+
+.conclusion-strip{
+  margin-top: 28px;
+  background: linear-gradient(90deg, rgba(125,249,255,.08), rgba(107,255,175,.06));
+  border:1px solid var(--border-strong);
+  border-left: 3px solid var(--cyan);
+  border-radius: var(--radius-sm);
+  padding: 16px 20px;
+  font-size: 17px;
+  display:flex; align-items:center; gap: 12px;
+  animation: slideIn .7s .55s both ease-out;
+}
+.conclusion-strip strong{ color: var(--cyan); }
+.conclusion-strip em{ color: var(--gold); font-style:normal; }
+.strip-arrow{ color: var(--cyan); font-size: 22px; }
+
+/* ============================================
+   SLIDE 7 — DWT / LWT
+   ============================================ */
+.wavelet-grid{
+  display:grid; grid-template-columns: 1fr 1fr; gap:24px;
+  flex:1; animation: slideIn .7s .2s both ease-out;
+}
+.wavelet-card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  position:relative;
+  display:flex; flex-direction:column;
+}
+.wavelet-card.featured{
+  background: linear-gradient(160deg, rgba(125,249,255,.1), rgba(107,255,175,.04));
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+.wave-header{ display:flex; align-items:baseline; gap: 14px; margin-bottom: 12px; }
+.wave-header h3{
+  font-size: 38px; font-weight:700;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.wave-en{ font-style:italic; color: var(--text-dim); font-size: 14px; }
+.wavelet-card p{ color: var(--text-dim); font-size: 15px; margin-bottom: 14px; }
+.wavelet-card strong{ color: var(--cyan); font-weight:600; }
+
+.dwt-blocks{
+  display:grid; grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  background: rgba(0,0,0,.3);
+  padding:4px;
+  border-radius: 10px;
+  border:1px solid var(--border);
+  margin-bottom: 14px;
+}
+.dwt-block{
+  padding: 16px 12px;
+  border-radius: 6px;
+  text-align:center;
+  font-family:'JetBrains Mono', monospace; font-weight:700; font-size:18px;
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.dwt-block small{ font-family:'Space Grotesk', sans-serif; font-weight:400; font-size:11px; opacity:.85; line-height:1.3; }
+.dwt-block.ll{ background: rgba(125,249,255,.18); color: var(--cyan); }
+.dwt-block.lh{ background: rgba(77,125,255,.18); color: #9bb8ff; }
+.dwt-block.hl{ background: rgba(255,107,157,.16); color: var(--magenta); }
+.dwt-block.hh{ background: rgba(255,209,102,.16); color: var(--gold); }
+
+.lwt-pipeline{
+  display:flex; align-items:center; justify-content:space-between;
+  margin: 12px 0 18px;
+}
+.lwt-step{
+  flex:1;
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  padding: 14px 8px;
+  background: rgba(0,0,0,.3);
+  border:1px solid var(--border);
+  border-radius: 10px;
+  font-weight:600; font-size:13.5px;
+}
+.lwt-step span{
+  width:26px; height:26px; border-radius:50%;
+  background: var(--cyan); color: var(--bg-0);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:700;
+}
+.lwt-arrow{ color: var(--cyan); font-size: 16px; padding: 0 4px; }
+
+/* ============================================
+   SLIDE 8 — Modélisation
+   ============================================ */
+.model-layout{
+  display:grid; grid-template-columns: 1fr 1fr; gap: 24px;
+  flex:1; animation: slideIn .7s .2s both ease-out;
+}
+.model-card{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 30px;
+}
+.model-card.highlight{
+  background: linear-gradient(160deg, rgba(107,255,175,.08), rgba(125,249,255,.04));
+  border-color: rgba(107,255,175,.35);
+}
+.model-step{
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  letter-spacing:.22em; text-transform:uppercase;
+  color: var(--text-mute); margin-bottom:6px;
+}
+.model-card h3{ font-size: 22px; margin-bottom: 12px; line-height:1.2; }
+.model-card p{ color: var(--text-dim); font-size: 15px; line-height:1.6; margin-bottom: 14px; }
+.model-card strong{ color: var(--cyan); }
+.formula-big{
+  font-size: 18px; padding: 18px 20px;
+  text-align:center;
+  background: linear-gradient(120deg, rgba(0,0,0,.4), rgba(125,249,255,.05));
+}
+.legend{
+  display:flex; gap: 18px; flex-wrap:wrap;
+  margin-top:14px; font-size:13px; color: var(--text-mute);
+}
+.legend b{ color: var(--cyan); font-family:'JetBrains Mono', monospace; }
+
+.energy-bar{
+  position:relative; height: 32px; border-radius: 8px;
+  background: rgba(0,0,0,.4); border:1px solid var(--border);
+  overflow:hidden; margin-top:14px;
+  display:flex; align-items:center; justify-content:center;
+}
+.energy-fill{
+  position:absolute; left:0; top:0; bottom:0; width: 92%;
+  background: linear-gradient(90deg, rgba(107,255,175,.4), rgba(125,249,255,.5));
+  border-right:2px solid var(--cyan);
+  animation: fillEnergy 2.5s ease-out forwards;
+}
+@keyframes fillEnergy{ from{ width:0%; } to{ width: 92%; } }
+.energy-label{
+  position:relative; z-index:2;
+  font-family:'JetBrains Mono', monospace; font-size:12px;
+  font-weight:600; color: #fff; letter-spacing:.1em;
+}
+
+/* ============================================
+   SLIDE 9 — Loop / Smart Switch
+   ============================================ */
+.loop-diagram{
+  display:grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+  align-items:stretch;
+  gap: 8px; margin-top: 14px; padding: 28px 16px 38px;
+  background: linear-gradient(120deg, rgba(125,249,255,.04), rgba(255,107,157,.03));
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  position:relative;
+  animation: slideIn .7s .2s both ease-out;
+}
+.loop-diagram::-webkit-scrollbar{ display:none; }
+.loop-node{
+  background: var(--bg-1);
+  border:1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px 10px 16px;
+  text-align:center;
+  position:relative;
+  transition: all .35s;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap: 6px;
+  min-width: 0;
+}
+.loop-node:hover{ border-color: var(--cyan); transform: translateY(-3px); }
+.node-icon{
+  font-size: 32px; margin-bottom: 2px; line-height: 1;
+  filter: drop-shadow(0 2px 10px rgba(125,249,255,.4));
+}
+.node-label{
+  font-size: 13px; font-weight:600; line-height:1.25;
+}
+.node-label small{
+  display:block; margin-top:3px;
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  color: var(--text-mute); font-weight:400;
+}
+.loop-arrow{
+  font-size: 20px; color: var(--cyan);
+  align-self: center;
+  animation: arrowSlide 2s ease-in-out infinite;
+}
+@keyframes arrowSlide{
+  0%,100%{ transform: translateX(0); opacity:.7; }
+  50%   { transform: translateX(4px); opacity:1; }
+}
+
+.node-switch{
+  background: linear-gradient(160deg, rgba(125,249,255,.15), rgba(107,255,175,.05));
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 0 30px -10px var(--cyan-strong);
+}
+.switch-badge{
+  position:absolute; top:-9px; left:50%; transform:translateX(-50%);
+  font-family:'JetBrains Mono', monospace; font-size:9px;
+  letter-spacing:.16em; text-transform:uppercase;
+  color: var(--bg-0); background: var(--cyan);
+  padding: 3px 9px; border-radius: 999px;
+  font-weight:700; white-space:nowrap;
+}
+.switch-states{
+  margin-top: 6px;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+  font-size: 10px; font-family:'JetBrains Mono', monospace;
+}
+.state{ padding:2px 6px; border-radius:5px; }
+.state-low { background: rgba(77,125,255,.2); color: #9bb8ff; }
+.state-high{ background: rgba(255,107,157,.2); color: var(--magenta); }
+.state-arrow{ color: var(--cyan); }
+
+.feedback-line{
+  position:absolute; bottom: -1px; left: 0; right: 0;
+  text-align:center;
+  font-family:'JetBrains Mono', monospace; font-size:11px;
+  color: var(--cyan); letter-spacing:.05em;
+  background: linear-gradient(180deg, transparent, rgba(125,249,255,.06));
+  padding: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.features-row{
+  display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+  margin-top: 16px;
+  animation: slideIn .7s .5s both ease-out;
+}
+.feat{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px 22px;
+  display:flex; align-items:baseline; gap: 8px; flex-wrap:wrap;
+}
+.feat-num{
+  font-size: 36px; font-weight:700;
+  background: linear-gradient(135deg, var(--cyan), var(--blue));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  line-height:1;
+}
+.feat-unit{ font-size:14px; color: var(--text-dim); font-weight:600; }
+.feat-label{
+  width: 100%;
+  margin-top:6px;
+  font-size:12px; color: var(--text-mute);
+  letter-spacing:.04em;
+}
+
+/* ============================================
+   SLIDE 10 — End / Q&A
+   ============================================ */
+.slide-end{
+  align-items:center; justify-content:center;
+  padding: 60px 90px;
+}
+.end-content{
+  width: 100%; max-width: 1100px;
+  text-align:center;
+  animation: slideIn .8s .15s both ease-out;
+}
+.end-chip{
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:'JetBrains Mono', monospace; font-size:12px;
+  letter-spacing:.2em; text-transform:uppercase;
+  color: var(--green);
+  background: rgba(107,255,175,.08);
+  border:1px solid rgba(107,255,175,.3);
+  padding:8px 16px; border-radius:999px;
+}
+.end-title{
+  margin-top: 22px;
+  font-size: clamp(40px, 5vw, 68px);
+  font-weight:700; line-height:1.1; letter-spacing:-.025em;
+  color: var(--text);
+}
+
+.takeaways{
+  display:grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+  margin-top: 44px;
+}
+.take{
+  background: var(--surface);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 20px;
+  text-align:left;
+  transition: all .35s;
+}
+.take:hover{ border-color: var(--cyan); transform: translateY(-3px); }
+.take-icon{
+  width:40px; height:40px; border-radius:10px;
+  background: rgba(125,249,255,.12); border:1px solid var(--border);
+  color: var(--cyan); font-size:20px;
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom: 12px;
+}
+.take strong{ display:block; font-size: 17px; margin-bottom: 6px; }
+.take span{ display:block; color: var(--text-dim); font-size: 14px; line-height:1.55; }
+
+.thanks{
+  margin-top: 50px;
+  padding: 30px;
+  background: linear-gradient(120deg, rgba(125,249,255,.08), rgba(255,107,157,.06));
+  border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+}
+.thanks h3{
+  font-size: clamp(28px, 3.4vw, 44px);
+  font-weight:700;
+  background: linear-gradient(90deg, var(--cyan), #fff, var(--magenta));
+  background-size: 200% auto;
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation: shineMove 5s linear infinite;
+}
+.thanks p{ margin-top: 8px; color: var(--text-dim); font-size: 17px; }
+.thanks strong{ color: var(--cyan); }
+
+.end-signatures-label{
+  margin-top: 22px;
+  font-family:'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--text-mute);
+  margin-bottom: 8px;
+}
+.end-signatures{
+  font-family:'JetBrains Mono', monospace; font-size:14px; font-weight: 600;
+  color: var(--text); letter-spacing:.1em;
+  display:flex; justify-content:center; gap:14px;
+}
+.dot-sep{ color: var(--cyan); }
+
+/* ===== shared anim ===== */
+@keyframes slideIn{
+  from{ opacity:0; transform: translateY(20px); }
+  to  { opacity:1; transform: translateY(0); }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1100px){
+  .slide{ padding: 70px 50px; }
+  .title-grid{ grid-template-columns: 1fr; gap:30px; }
+  .title-right{ display:none; }
+  .two-col{ grid-template-columns: 1fr; }
+  .problem-grid, .objectives, .approach-grid, .takeaways, .features-row{
+    grid-template-columns: 1fr 1fr;
+  }
+  .fourier-layout{ grid-template-columns: 1fr; }
+  .vs-divider{ flex-direction:row; }
+  .vs-divider::before, .vs-divider::after{ display:none; }
+  .wavelet-grid, .model-layout{ grid-template-columns: 1fr; }
+  .loop-diagram{
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 30px 14px 50px;
+  }
+  .loop-arrow{ transform: rotate(90deg); }
+}
+@media (max-width: 720px){
+  .slide{ padding: 80px 24px 90px; }
+  .problem-grid, .objectives, .approach-grid, .takeaways, .features-row{ grid-template-columns: 1fr; }
+  .brand-badge{ display:none; }
+}
+
+/* nice scrollbar */
+.slide::-webkit-scrollbar{ width:0; height:0; display:none; }
+
+
+
+/* =====================================================
+   MATH / EQUATIONS — professional typesetting
+   ===================================================== */
+
+/* italic math variables (STIX = a TeX-like serif) */
+.math-i{
+  font-family: 'STIX Two Text', 'Cambria Math', 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+.math-i sub, .math-i sup{
+  font-style: italic;
+  font-size: .75em;
+}
+
+/* generic equation block */
+.eq-block{
+  margin-top: 14px;
+  padding: 18px 22px;
+  background: linear-gradient(120deg, rgba(0,0,0,.55), rgba(125,249,255,.05));
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: 12px;
+  font-family: 'STIX Two Text', 'Cambria Math', 'Times New Roman', serif;
+  font-size: 22px;
+  color: #f4faff;
+  line-height: 1.4;
+  text-align: left;
+  letter-spacing: .01em;
+  box-shadow: inset 0 0 60px -30px rgba(125,249,255,.4);
+}
+.eq-block.big{
+  font-size: 28px;
+  padding: 22px 28px;
+}
+.eq-block.centered{
+  text-align: center;
+}
+.eq-block sup, .eq-block sub{
+  font-size: .65em;
+  letter-spacing: 0;
+}
+.eq-block big{
+  font-size: 1.2em;
+  font-weight: 300;
+  color: var(--cyan);
+  vertical-align: middle;
+}
+
+.eq-line + .eq-line{ margin-top: 8px; }
+
+.op-int{
+  font-family: 'STIX Two Text', 'Cambria Math', serif;
+  font-style: italic;
+  font-size: 1.4em;
+  color: var(--cyan);
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.eq-label{
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 6px;
+}
+
+.eq-legend{
+  margin-top: 12px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--text-mute);
+}
+.eq-legend b{
+  color: var(--cyan);
+  font-family: 'STIX Two Text', serif;
+  font-style: italic;
+  font-weight: 500;
+  margin-right: 4px;
+}
+.eq-legend i{
+  color: var(--text-dim);
+}
+
+/* override old monospace formula style */
+.formula{
+  margin-top: 14px;
+  background: linear-gradient(120deg, rgba(0,0,0,.55), rgba(125,249,255,.05));
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--cyan);
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-family: 'STIX Two Text', 'Cambria Math', serif;
+  font-size: 18px;
+  color: #f4faff;
+  letter-spacing: .01em;
+  text-align: center;
+}
+.formula-big{
+  font-size: 24px;
+  padding: 22px 26px;
+}
+
+/* =====================================================
+   SLIDES 7 & 8 — split DWT / LWT (one each)
+   ===================================================== */
+
+.single-wave-layout{
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 28px;
+  flex: 1;
+  animation: slideIn .7s .2s both ease-out;
+}
+
+.wavelet-card.large{
+  padding: 32px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.wave-intro{
+  font-size: 16px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 4px;
+}
+.wave-intro strong{ color: var(--cyan); }
+
+.dwt-blocks.big{
+  margin: 4px 0;
+}
+.dwt-blocks.big .dwt-block{
+  padding: 26px 16px;
+  font-size: 24px;
+}
+.dwt-blocks.big .dwt-block small{
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.lwt-pipeline.big{
+  margin: 8px 0;
+  gap: 4px;
+}
+.lwt-pipeline.big .lwt-step{
+  padding: 22px 14px;
+  font-size: 15px;
+  gap: 8px;
+}
+.lwt-pipeline.big .lwt-step strong{
+  font-size: 17px;
+  color: var(--text);
+}
+.lwt-pipeline.big .lwt-step small{
+  font-size: 11px;
+  color: var(--text-mute);
+  text-align: center;
+  line-height: 1.3;
+}
+
+.check-list.two-cols{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 18px;
+  margin-top: 6px;
+}
+
+.dwt-side{
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+.dwt-formula-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  transition: all .3s;
+}
+.dwt-formula-card:hover{
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+}
+.dwt-formula-card.alt{
+  background: linear-gradient(140deg, rgba(125,249,255,.05), rgba(77,125,255,.03));
+}
+.dwt-formula-card .eq-block{
+  margin-top: 4px;
+}
+
+/* =====================================================
+   SLIDE 10 — control law block
+   ===================================================== */
+
+.control-law{
+  margin-top: 14px;
+  padding: 14px 22px;
+  background: linear-gradient(120deg, rgba(125,249,255,.06), rgba(0,0,0,.3));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.control-law .eq-block{
+  margin-top: 6px;
+  font-size: 22px;
+  padding: 14px 20px;
+}
+.control-law .eq-label{
+  margin-bottom: 4px;
+}
+.control-law .eq-legend{
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+/* responsive split-wavelet */
+@media (max-width: 1100px){
+  .single-wave-layout{ grid-template-columns: 1fr; }
+  .check-list.two-cols{ grid-template-columns: 1fr; }
+}
+
+</style>
+</head>
+<body>
+
+  <!-- Background grid + glow -->
+  <div class="bg-layer">
+    <div class="bg-grid"></div>
+    <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
+    <div class="bg-glow glow-3"></div>
+  </div>
+
+  <!-- Top progress bar -->
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <!-- Slide counter -->
+  <div class="slide-counter">
+    <span id="currentSlide">1</span><span class="sep">/</span><span id="totalSlides">11</span>
+  </div>
+
+  <!-- Brand badge -->
+  <div class="brand-badge">
+    <div class="brand-dot"></div>
+    <span>ESG2E Oran · 2025–2026</span>
+  </div>
+
+  <!-- Navigation buttons -->
+  <button class="nav-btn nav-prev" id="navPrev" aria-label="Previous slide">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <button class="nav-btn nav-next" id="navNext" aria-label="Next slide">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+
+  <!-- Slides container -->
+  <main class="slides">
+
+    <!-- ============ SLIDE 1 — TITLE ============ -->
+    <section class="slide slide-title active" data-slide="1">
+      <div class="title-grid">
+        <div class="title-left">
+          <div class="chip">
+            <span class="chip-pulse"></span>
+            Master's Defense · 2026
+          </div>
+          <h1 class="hero-title">
+            <span class="title-line shine">Direct Visual</span>
+            <span class="title-line shine">Servoing</span>
+            <span class="title-accent">using Multiscale Decomposition</span>
+          </h1>
+          <p class="hero-subtitle">
+            A robust photometric approach based on
+            <strong>wavelets</strong> and <strong>dynamic switching</strong>.
+          </p>
+
+          <div class="authors-label">Presented by</div>
+          <div class="authors">
+            <div class="author">
+              <div class="avatar">AM</div>
+              <div class="author-name">ABBOU Ahmed Mohammed</div>
+            </div>
+            <div class="author">
+              <div class="avatar avatar-alt">AE</div>
+              <div class="author-name">KHEROUAA Alaa Eddine</div>
+            </div>
+          </div>
+
+          <div class="meta-row">
+            <div class="meta-item"><span>School</span><strong>ESG2E Oran</strong></div>
+            <div class="meta-item"><span>Year</span><strong>2025 — 2026</strong></div>
+            <div class="meta-item"><span>Field</span><strong>Robotics &amp; Vision</strong></div>
+          </div>
+        </div>
+
+        <div class="title-right">
+          <div class="hero-visual">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+            <div class="ring ring-4"></div>
+            <div class="hero-core">
+              <svg viewBox="0 0 120 120" class="eye-svg">
+                <defs>
+                  <radialGradient id="eyeGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#7df9ff"/>
+                    <stop offset="60%" stop-color="#00d4ff"/>
+                    <stop offset="100%" stop-color="#0066ff"/>
+                  </radialGradient>
+                </defs>
+                <circle cx="60" cy="60" r="40" fill="url(#eyeGrad)" />
+                <circle cx="60" cy="60" r="18" fill="#001027" />
+                <circle cx="52" cy="52" r="6" fill="#fff" opacity=".9"/>
+              </svg>
+            </div>
+            <div class="scan-line"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-hint">Press <kbd>→</kbd> to start</div>
+    </section>
+
+    <!-- ============ SLIDE 2 — CONTEXT ============ -->
+    <section class="slide" data-slide="2">
+      <div class="slide-header">
+        <span class="slide-tag">02 · Introduction</span>
+        <h2 class="slide-title">General Context</h2>
+        <p class="slide-lede">Computer vision at the heart of modern robotic control.</p>
+      </div>
+
+      <div class="two-col">
+        <div class="col">
+          <div class="info-card">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 8l4-4h12l4 4v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+            <h3>Computer Vision</h3>
+            <p>Enables the robot to <em>perceive</em> its environment from images — like an intelligent eye guiding every motion.</p>
+          </div>
+
+          <div class="info-card">
+            <div class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/><circle cx="12" cy="12" r="4"/></svg>
+            </div>
+            <h3>Visual Servoing</h3>
+            <p>A continuous feedback loop where the image becomes the <strong>control signal</strong> that adjusts the robot's pose in real time.</p>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="config-card">
+            <div class="config-tag">Configuration studied</div>
+            <div class="config-title">Eye-in-Hand</div>
+            <div class="config-en">embedded camera</div>
+
+            <div class="robot-scene">
+              <svg viewBox="0 0 320 220" class="robot-svg">
+                <rect x="130" y="180" width="60" height="20" rx="4" fill="#0a2342" stroke="#00d4ff" stroke-width="1.5"/>
+                <line x1="160" y1="180" x2="160" y2="130" stroke="#00d4ff" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="160" cy="130" r="6" fill="#7df9ff"/>
+                <line x1="160" y1="130" x2="220" y2="90" stroke="#00d4ff" stroke-width="6" stroke-linecap="round"/>
+                <circle cx="220" cy="90" r="6" fill="#7df9ff"/>
+                <rect x="210" y="60" width="40" height="28" rx="4" fill="#0a2342" stroke="#7df9ff" stroke-width="1.5"/>
+                <circle cx="230" cy="74" r="8" fill="#001027" stroke="#7df9ff" stroke-width="1.5"/>
+                <circle cx="230" cy="74" r="3" fill="#7df9ff"/>
+                <path d="M230 80 L80 200 L380 200 Z" fill="url(#coneGrad)" opacity=".18"/>
+                <defs>
+                  <linearGradient id="coneGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#7df9ff"/>
+                    <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="80" cy="195" r="6" fill="#ff6b9d" class="target-pulse"/>
+              </svg>
+            </div>
+
+            <ul class="check-list">
+              <li>Camera mounted on the robot's end-effector</li>
+              <li>View centered on the target to reach</li>
+              <li>High accuracy for fine manipulation tasks</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 3 — PROBLEM ============ -->
+    <section class="slide" data-slide="3">
+      <div class="slide-header">
+        <span class="slide-tag tag-warn">03 · The challenge</span>
+        <h2 class="slide-title">Problem Statement</h2>
+        <p class="slide-lede">The limits of pure Photometric Visual Servoing (PVS).</p>
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card">
+          <div class="prob-num">01</div>
+          <h3>Brightness dependency</h3>
+          <p>The <strong>constant illumination</strong> assumption rarely holds in real-world conditions.</p>
+          <div class="lum-demo">
+            <div class="lum-cell lum-bright"><span class="math-i">I</span> = 220</div>
+            <div class="lum-arrow">→</div>
+            <div class="lum-cell lum-dark"><span class="math-i">I</span> = 80</div>
+          </div>
+        </div>
+
+        <div class="problem-card">
+          <div class="prob-num">02</div>
+          <h3>Dynamic variations</h3>
+          <p>Lighting changes, moving shadows, reflections — the control law becomes <strong>unstable</strong>.</p>
+          <div class="wave-demo">
+            <svg viewBox="0 0 200 60" class="wave-svg">
+              <path d="M0 30 Q 25 5, 50 30 T 100 30 T 150 30 T 200 30" stroke="#ff6b9d" fill="none" stroke-width="2"/>
+              <path d="M0 30 Q 12 50, 25 30 T 50 30 T 75 30 T 100 30 T 125 30 T 150 30 T 175 30 T 200 30" stroke="#ffd166" fill="none" stroke-width="2" opacity=".7"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="problem-card alert">
+          <div class="prob-num">03</div>
+          <h3>Glare attacks</h3>
+          <p>Vulnerability to <strong>flash bursts</strong> and saturating highlights that blind the system.</p>
+          <div class="glare-demo">
+            <div class="glare-flash"></div>
+            <span class="glare-label">⚠ FLASH</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quote-box">
+        <span class="quote-mark">"</span>
+        How can we guarantee a <strong>robust</strong> visual servoing
+        against photometric reality?
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 4 — OBJECTIVES ============ -->
+    <section class="slide" data-slide="4">
+      <div class="slide-header">
+        <span class="slide-tag tag-success">04 · Our answer</span>
+        <h2 class="slide-title">Objectives &amp; Contributions</h2>
+        <p class="slide-lede">Three pillars for a robust, fast, and adaptive solution.</p>
+      </div>
+
+      <div class="objectives">
+        <div class="obj-card">
+          <div class="obj-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="obj-step">Step 01</div>
+          <h3>Multiscale decomposition</h3>
+          <p>Improve <strong>robustness</strong> by splitting the image into multiple levels of detail.</p>
+        </div>
+
+        <div class="obj-card highlight">
+          <div class="obj-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          </div>
+          <div class="obj-step">Step 02</div>
+          <h3>DWT-PVS &amp; LWT-PVS</h3>
+          <p>Propose a <strong>Lifting Wavelet Transform</strong> variant optimized for computation — perfect for real-time.</p>
+        </div>
+
+        <div class="obj-card">
+          <div class="obj-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+          </div>
+          <div class="obj-step">Step 03</div>
+          <h3>Coarse-to-Fine strategy</h3>
+          <p>Integrate a dynamic <strong>Smart Switch</strong> to transition from coarse approximation to fine details.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 5 — IBVS / PBVS / PVS ============ -->
+    <section class="slide" data-slide="5">
+      <div class="slide-header">
+        <span class="slide-tag">05 · Foundations</span>
+        <h2 class="slide-title">Visual Servoing Approaches</h2>
+        <p class="slide-lede">Three paradigms, one mission: guide the robot through vision.</p>
+      </div>
+
+      <div class="approach-grid">
+        <div class="approach-card">
+          <div class="approach-tag">Approach 1</div>
+          <h3>IBVS</h3>
+          <div class="approach-en">Image-Based Visual Servoing</div>
+          <p>Uses <strong>2D features</strong> extracted from the image (points, lines, contours).</p>
+          <div class="approach-illu approach-2d">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          </div>
+        </div>
+
+        <div class="approach-card">
+          <div class="approach-tag">Approach 2</div>
+          <h3>PBVS</h3>
+          <div class="approach-en">Position-Based Visual Servoing</div>
+          <p>Reconstructs the <strong>3D pose</strong> of the object before servoing.</p>
+          <div class="approach-illu approach-3d">
+            <div class="cube">
+              <div class="face front"></div>
+              <div class="face back"></div>
+              <div class="face right"></div>
+              <div class="face left"></div>
+              <div class="face top"></div>
+              <div class="face bottom"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="approach-card featured">
+          <div class="featured-badge">★ Our base</div>
+          <div class="approach-tag">Approach 3</div>
+          <h3>PVS</h3>
+          <div class="approach-en">Photometric Visual Servoing</div>
+          <p>Directly exploits <strong>pixel intensities</strong> — no feature extraction needed.</p>
+          <div class="approach-illu approach-px">
+            <div class="px-grid">
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 6 — FOURIER ============ -->
+    <section class="slide" data-slide="6">
+      <div class="slide-header">
+        <span class="slide-tag">06 · Frequency analysis</span>
+        <h2 class="slide-title">Fourier and its Limits</h2>
+        <p class="slide-lede">Why the Fourier transform is not enough for images.</p>
+      </div>
+
+      <div class="fourier-layout">
+        <div class="fourier-card">
+          <h3>The Fourier Transform</h3>
+          <p>Decomposes a signal into <strong>pure frequencies</strong> — ideal for stationary signals.</p>
+          <svg viewBox="0 0 280 100" class="signal-svg">
+            <path d="M0 50 Q 14 10, 28 50 T 56 50 T 84 50 T 112 50 T 140 50 T 168 50 T 196 50 T 224 50 T 252 50 T 280 50"
+                  stroke="#00d4ff" fill="none" stroke-width="2.4"/>
+          </svg>
+          <div class="eq-block">
+            <div class="eq-line">
+              <span class="math-i">F</span>(<span class="math-i">u</span>,<span class="math-i">v</span>) =
+              <span class="op-int">∫∫</span>
+              <span class="math-i">f</span>(<span class="math-i">x</span>,<span class="math-i">y</span>) ·
+              <span class="math-i">e</span><sup>−<span class="math-i">j</span> 2π(<span class="math-i">ux</span>+<span class="math-i">vy</span>)</sup>
+              <span class="math-i">dx dy</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="vs-divider">
+          <span>VS</span>
+        </div>
+
+        <div class="fourier-card warn">
+          <h3>Major limitation</h3>
+          <p><strong>No spatial localization</strong>: we know that a frequency exists — but not <em>where</em>.</p>
+          <svg viewBox="0 0 280 100" class="signal-svg">
+            <path d="M0 50 L 60 50 Q 70 10, 80 50 Q 90 90, 100 50 L 280 50"
+                  stroke="#ff6b9d" fill="none" stroke-width="2.4"/>
+            <line x1="80" y1="10" x2="80" y2="90" stroke="#ffd166" stroke-dasharray="3 3" opacity=".6"/>
+          </svg>
+          <p class="warn-text">Images are <strong>non-stationary</strong>: edges, textures, flat regions — all coexist spatially.</p>
+        </div>
+      </div>
+
+      <div class="conclusion-strip">
+        <span class="strip-arrow">→</span>
+        We need a tool that sees <strong>both</strong> frequency <em>and</em> position: <strong>wavelets</strong>.
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 7 — DWT (own slide) ============ -->
+    <section class="slide" data-slide="7">
+      <div class="slide-header">
+        <span class="slide-tag tag-success">07 · The solution — Part 1</span>
+        <h2 class="slide-title">DWT — Discrete Wavelet Transform</h2>
+        <p class="slide-lede">A multi-resolution analysis tailored to images.</p>
+      </div>
+
+      <div class="single-wave-layout">
+        <div class="wavelet-card large">
+          <p class="wave-intro">The DWT decomposes an image into four sub-bands, separating <strong>global trends</strong> from <strong>structural details</strong>.</p>
+          <div class="dwt-blocks big">
+            <div class="dwt-block ll">LL<small>global trends<br/>(illumination)</small></div>
+            <div class="dwt-block lh">LH<small>horizontal<br/>details</small></div>
+            <div class="dwt-block hl">HL<small>vertical<br/>details</small></div>
+            <div class="dwt-block hh">HH<small>diagonal<br/>details (edges)</small></div>
+          </div>
+          <ul class="check-list two-cols">
+            <li>Coarse view + detailed view from a single pass</li>
+            <li>Robust to global illumination changes</li>
+            <li>Mathematical foundation for our DWT-PVS</li>
+            <li>Natural support for multi-resolution control</li>
+          </ul>
+        </div>
+
+        <div class="dwt-side">
+          <div class="dwt-formula-card">
+            <div class="eq-label">Wavelet decomposition</div>
+            <div class="eq-block big">
+              <span class="math-i">W<sub>j,k</sub></span>(<span class="math-i">f</span>) =
+              <span class="op-int">∫</span>
+              <span class="math-i">f</span>(<span class="math-i">x</span>) ·
+              <span class="math-i">ψ<sub>j,k</sub></span>(<span class="math-i">x</span>) <span class="math-i">dx</span>
+            </div>
+            <div class="eq-legend">
+              <span><b>ψ<sub>j,k</sub></b> wavelet at scale <i>j</i>, position <i>k</i></span>
+            </div>
+          </div>
+
+          <div class="dwt-formula-card alt">
+            <div class="eq-label">Image decomposition</div>
+            <div class="eq-block">
+              <span class="math-i">I</span>(<span class="math-i">x</span>,<span class="math-i">y</span>) =
+              LL + LH + HL + HH
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 8 — LWT (own slide) ============ -->
+    <section class="slide" data-slide="8">
+      <div class="slide-header">
+        <span class="slide-tag tag-success">08 · The solution — Part 2</span>
+        <h2 class="slide-title">LWT — Lifting Wavelet Transform</h2>
+        <p class="slide-lede">A computation-optimized alternative for real-time control.</p>
+      </div>
+
+      <div class="single-wave-layout">
+        <div class="wavelet-card large featured">
+          <div class="featured-badge">★ Optimized</div>
+          <p class="wave-intro">The LWT replaces filter-bank convolutions by a <strong>three-step lifting scheme</strong> — the same wavelet result, computed faster.</p>
+
+          <div class="lwt-pipeline big">
+            <div class="lwt-step"><span>1</span><strong>Split</strong><small>even / odd<br/>samples</small></div>
+            <div class="lwt-arrow">▸</div>
+            <div class="lwt-step"><span>2</span><strong>Predict</strong><small>predict odd<br/>from even</small></div>
+            <div class="lwt-arrow">▸</div>
+            <div class="lwt-step"><span>3</span><strong>Update</strong><small>refine even<br/>samples</small></div>
+          </div>
+
+          <ul class="check-list two-cols">
+            <li>Avoids costly multiplications</li>
+            <li>In-place computation (memory efficient)</li>
+            <li><strong>Real-time</strong> capability guaranteed</li>
+            <li>Ideal for embedded systems</li>
+          </ul>
+        </div>
+
+        <div class="dwt-side">
+          <div class="dwt-formula-card">
+            <div class="eq-label">Predict step</div>
+            <div class="eq-block big">
+              <span class="math-i">d<sub>k</sub></span> =
+              <span class="math-i">x</span><sub>2k+1</sub> −
+              <span class="math-i">P</span>(<span class="math-i">x</span><sub>2k</sub>)
+            </div>
+          </div>
+
+          <div class="dwt-formula-card">
+            <div class="eq-label">Update step</div>
+            <div class="eq-block big">
+              <span class="math-i">s<sub>k</sub></span> =
+              <span class="math-i">x</span><sub>2k</sub> +
+              <span class="math-i">U</span>(<span class="math-i">d<sub>k</sub></span>)
+            </div>
+          </div>
+
+          <div class="dwt-formula-card alt">
+            <div class="eq-label">Output</div>
+            <div class="eq-block">
+              <span class="math-i">s<sub>k</sub></span> · approximation &nbsp;&nbsp;
+              <span class="math-i">d<sub>k</sub></span> · detail
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 9 — MODELING ============ -->
+    <section class="slide" data-slide="9">
+      <div class="slide-header">
+        <span class="slide-tag">09 · Proposed approach</span>
+        <h2 class="slide-title">Modeling DWT-PVS &amp; LWT-PVS</h2>
+        <p class="slide-lede">Mathematical formulation of the error in the wavelet domain.</p>
+      </div>
+
+      <div class="model-layout">
+        <div class="model-card">
+          <div class="model-step">Step 1</div>
+          <h3>Photometric error in the wavelet domain</h3>
+          <p>Instead of comparing raw pixels, we compare their <strong>wavelet coefficients</strong>.</p>
+          <div class="eq-block big centered">
+            <span class="math-i">e</span>(<span class="math-i">t</span>) =
+            <span class="math-i">W</span>(<span class="math-i">I</span><sup>*</sup>) −
+            <span class="math-i">W</span>(<span class="math-i">I</span>(<span class="math-i">t</span>))
+          </div>
+          <div class="eq-legend">
+            <span><b>W</b> wavelet transform</span>
+            <span><b>I*</b> desired image</span>
+            <span><b>I(t)</b> current image</span>
+          </div>
+        </div>
+
+        <div class="model-card highlight">
+          <div class="model-step">Step 2 · LWT specificity</div>
+          <h3>Energy normalization factor</h3>
+          <p>The LWT introduces a <strong>normalization factor</strong> <span class="math-i">K</span> to preserve numerical accuracy despite the absence of expensive multiplications.</p>
+          <div class="eq-block big centered">
+            <span class="math-i">e<sub>LWT</sub></span> =
+            <span class="math-i">K</span> · <big>(</big>
+            <span class="math-i">W<sub>L</sub></span>(<span class="math-i">I</span><sup>*</sup>) −
+            <span class="math-i">W<sub>L</sub></span>(<span class="math-i">I</span>(<span class="math-i">t</span>))
+            <big>)</big>
+          </div>
+          <div class="energy-bar">
+            <div class="energy-fill"></div>
+            <span class="energy-label">Energy preserved</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 10 — ARCHITECTURE / SMART SWITCH ============ -->
+    <section class="slide" data-slide="10">
+      <div class="slide-header">
+        <span class="slide-tag tag-success">10 · Architecture</span>
+        <h2 class="slide-title">Control Loop &amp; Smart Switch</h2>
+        <p class="slide-lede">Real-time scheme · ViSP · 25 FPS · T<sub>e</sub> = 0.04 s</p>
+      </div>
+
+      <div class="loop-diagram">
+        <div class="loop-node node-target">
+          <div class="node-icon">🎯</div>
+          <div class="node-label">Desired image<br/><small><span class="math-i">I</span><sup>*</sup></small></div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-error">
+          <div class="node-icon">∑</div>
+          <div class="node-label">Wavelet error<br/><small><span class="math-i">e</span>(<span class="math-i">t</span>)</small></div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-switch">
+          <div class="switch-badge">★ Smart Switch</div>
+          <div class="node-icon">⇄</div>
+          <div class="node-label">Coarse → Fine</div>
+          <div class="switch-states">
+            <span class="state state-low">Low-Low</span>
+            <span class="state-arrow">→</span>
+            <span class="state state-high">High-Freq</span>
+          </div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-control">
+          <div class="node-icon">⚙</div>
+          <div class="node-label">Control law<br/><small><span class="math-i">v</span>(<span class="math-i">t</span>)</small></div>
+        </div>
+        <div class="loop-arrow">→</div>
+
+        <div class="loop-node node-robot">
+          <div class="node-icon">🤖</div>
+          <div class="node-label">Robot<br/><small>Eye-in-hand</small></div>
+        </div>
+
+        <div class="feedback-line">
+          <span>← Current image <span class="math-i">I</span>(<span class="math-i">t</span>) · 25 FPS</span>
+        </div>
+      </div>
+
+      <div class="control-law">
+        <div class="eq-label">Control law</div>
+        <div class="eq-block big centered">
+          <span class="math-i">v</span>(<span class="math-i">t</span>) =
+          −λ · <span class="math-i">L</span><sup>+</sup> · <span class="math-i">e</span>(<span class="math-i">t</span>)
+        </div>
+        <div class="eq-legend">
+          <span><b>λ</b> proportional gain</span>
+          <span><b>L<sup>+</sup></b> pseudo-inverse of the interaction matrix</span>
+        </div>
+      </div>
+
+      <div class="features-row">
+        <div class="feat">
+          <div class="feat-num">25</div>
+          <div class="feat-unit">FPS</div>
+          <div class="feat-label">Real-time framerate</div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">0.04</div>
+          <div class="feat-unit">s</div>
+          <div class="feat-label">Sampling period</div>
+        </div>
+        <div class="feat">
+          <div class="feat-num">★</div>
+          <div class="feat-unit">Safety</div>
+          <div class="feat-label">Velocity saturation</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SLIDE 11 — CONCLUSION + Q&A ============ -->
+    <section class="slide slide-end" data-slide="11">
+      <div class="end-content">
+        <div class="end-chip">
+          <span class="chip-pulse"></span>
+          Conclusion
+        </div>
+        <h2 class="end-title">A more <span class="shine">robust</span> vision,<br/>a smarter <span class="shine">control</span>.</h2>
+
+        <div class="takeaways">
+          <div class="take">
+            <div class="take-icon">✦</div>
+            <strong>DWT-PVS &amp; LWT-PVS</strong>
+            <span>Photometric robustness via multiscale decomposition.</span>
+          </div>
+          <div class="take">
+            <div class="take-icon">⚡</div>
+            <strong>Lifting Transform</strong>
+            <span>Real-time computation optimized for embedded systems.</span>
+          </div>
+          <div class="take">
+            <div class="take-icon">⇄</div>
+            <strong>Smart Switch</strong>
+            <span>Adaptive and safe Coarse-to-Fine strategy.</span>
+          </div>
+        </div>
+
+        <div class="thanks">
+          <h3>Thank you for your attention</h3>
+          <p>Open to <strong>questions &amp; discussion</strong></p>
+        </div>
+
+        <div class="end-signatures">
+          <span>ABBOU Ahmed Mohammed</span>
+          <span class="dot-sep">•</span>
+          <span>KHEROUAA Alaa Eddine</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom dots navigation -->
+  <nav class="dots-nav" id="dotsNav"></nav>
+
+  <script>
+/* =====================================================
+   PRESENTATION — Direct Visual Servoing using Multiscale Decomposition
+   Navigation : keyboard, click, swipe, dots
+   ===================================================== */
+
+(function () {
+  'use strict';
+
+  const slides       = Array.from(document.querySelectorAll('.slide'));
+  const totalSlides  = slides.length;
+  const progressFill = document.getElementById('progressFill');
+  const currentEl    = document.getElementById('currentSlide');
+  const totalEl      = document.getElementById('totalSlides');
+  const navPrev      = document.getElementById('navPrev');
+  const navNext      = document.getElementById('navNext');
+  const dotsNav      = document.getElementById('dotsNav');
+
+  let current = 0;
+  let isAnimating = false;
+
+  // ---------- init dots ----------
+  totalEl.textContent = totalSlides;
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('aria-label', `Aller à la slide ${i + 1}`);
+    dot.addEventListener('click', () => goTo(i));
+    dotsNav.appendChild(dot);
+  });
+  const dots = Array.from(document.querySelectorAll('.dot'));
+
+  // ---------- navigation ----------
+  function goTo(index) {
+    if (isAnimating) return;
+    if (index < 0 || index >= totalSlides || index === current) return;
+
+    isAnimating = true;
+    slides[current].classList.remove('active');
+    dots[current].classList.remove('active');
+
+    current = index;
+
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+
+    // counter + progress
+    currentEl.textContent = current + 1;
+    const pct = ((current + 1) / totalSlides) * 100;
+    progressFill.style.width = pct + '%';
+
+    // disable buttons at edges
+    navPrev.disabled = current === 0;
+    navNext.disabled = current === totalSlides - 1;
+
+    // reset scroll inside the slide
+    slides[current].scrollTop = 0;
+
+    setTimeout(() => { isAnimating = false; }, 600);
+  }
+
+  function next() { goTo(current + 1); }
+  function prev() { goTo(current - 1); }
+
+  navPrev.addEventListener('click', prev);
+  navNext.addEventListener('click', next);
+  navPrev.disabled = true;
+
+  // ---------- keyboard ----------
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault(); next();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault(); prev();
+    } else if (e.key === 'Home') {
+      e.preventDefault(); goTo(0);
+    } else if (e.key === 'End') {
+      e.preventDefault(); goTo(totalSlides - 1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      // fullscreen toggle
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.();
+      } else {
+        document.exitFullscreen?.();
+      }
+    } else if (/^[0-9]$/.test(e.key)) {
+      const n = parseInt(e.key, 10);
+      const target = n === 0 ? 9 : n - 1;
+      if (target < totalSlides) goTo(target);
+    }
+  });
+
+  // ---------- mouse wheel (debounced) ----------
+  let wheelTimeout = null;
+  document.addEventListener('wheel', (e) => {
+    // ignore if scrolling inside a long slide
+    const target = e.target.closest('.slide');
+    if (target && target.scrollHeight > target.clientHeight + 5) return;
+
+    if (wheelTimeout) return;
+    if (Math.abs(e.deltaY) < 30) return;
+
+    if (e.deltaY > 0) next(); else prev();
+
+    wheelTimeout = setTimeout(() => { wheelTimeout = null; }, 700);
+  }, { passive: true });
+
+  // ---------- touch swipe ----------
+  let touchStartX = 0, touchStartY = 0;
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) next(); else prev();
+    }
+  }, { passive: true });
+
+  // ---------- click on edges (presentation feeling) ----------
+  // disabled to avoid conflicts with interactive elements
+
+  // ---------- mouse parallax on hero visual ----------
+  const heroVisual = document.querySelector('.hero-visual');
+  if (heroVisual) {
+    document.addEventListener('mousemove', (e) => {
+      if (current !== 0) return;
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const dx = (e.clientX - cx) / cx;
+      const dy = (e.clientY - cy) / cy;
+      heroVisual.style.transform =
+        `translate(${dx * 12}px, ${dy * 12}px)`;
+    });
+  }
+
+  // ---------- prevent context menu on background ----------
+  // (kept default — useful for screenshots)
+
+  // ---------- init progress ----------
+  progressFill.style.width = (1 / totalSlides * 100) + '%';
+
+  // ---------- expose minimal API for debugging ----------
+  window.__presentation = { goTo, next, prev, get current() { return current; } };
+})();
+
+</script>
+</body>
+</html>
