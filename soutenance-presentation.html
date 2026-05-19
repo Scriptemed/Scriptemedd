@@ -6,20 +6,20 @@
 <title>Direct Visual Servoing Using Multiscale Decomposition - Thesis Defense</title>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#0a0e1a;color:#e8eaf6}
-#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none}
-#progress-bar{position:fixed;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#00bcd4,#7c4dff,#00e5ff);z-index:1000;transition:width 0.6s cubic-bezier(.4,0,.2,1)}
-#slide-counter{position:fixed;bottom:12px;right:24px;font-size:0.85rem;color:rgba(255,255,255,0.5);z-index:1000;font-weight:300;letter-spacing:1px}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 45%,#fef7ff 100%)}
+#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.55}
+#progress-bar{position:fixed;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#0891b2,#7c3aed,#db2777);z-index:1000;transition:width 0.6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(124,58,237,0.4)}
+#slide-counter{position:fixed;bottom:14px;right:24px;font-size:0.8rem;color:#64748b;z-index:1000;font-weight:500;letter-spacing:1.2px}
 .slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;opacity:0;transform:translateY(30px) scale(0.97);transition:opacity 0.7s cubic-bezier(.4,0,.2,1),transform 0.7s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:1}
 .slide.active{opacity:1;transform:translateY(0) scale(1);pointer-events:all;z-index:10}
 .slide-content{max-width:1200px;width:100%;text-align:center;position:relative;z-index:2}
-h1{font-size:2.8rem;font-weight:700;letter-spacing:-0.5px;margin-bottom:16px;background:linear-gradient(135deg,#e0f7fa,#80deea,#7c4dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-h2{font-size:2rem;font-weight:600;margin-bottom:30px;color:#b2ebf2;text-shadow:0 0 20px rgba(0,188,212,0.3)}
-h3{font-size:1.3rem;font-weight:400;color:#80cbc4;margin-bottom:12px}
-p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 auto}
-.subtitle{font-size:1.2rem;color:#80cbc4;margin-top:10px;font-weight:300}
-.authors{font-size:1.4rem;color:#e0f7fa;margin-top:24px;font-weight:500}
-.school{font-size:1rem;color:#78909c;margin-top:12px;letter-spacing:2px;text-transform:uppercase}
+h1{font-size:3rem;font-weight:800;letter-spacing:-1px;margin-bottom:16px;background:linear-gradient(110deg,#0891b2 0%,#7c3aed 45%,#db2777 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2{font-size:2rem;font-weight:700;margin-bottom:24px;background:linear-gradient(110deg,#0e7490,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.3px}
+h3{font-size:1.25rem;font-weight:600;color:#0e7490;margin-bottom:12px}
+p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0 auto}
+.subtitle{font-size:1.15rem;color:#475569;margin-top:14px;font-weight:400;letter-spacing:0.2px}
+.authors{font-size:1.25rem;color:#1e293b;margin-top:8px;font-weight:600}
+.school{font-size:0.85rem;color:#64748b;margin-top:6px;letter-spacing:2.5px;text-transform:uppercase;font-weight:600}
 .fade-item{opacity:0;transform:translateY(20px);transition:opacity 0.6s ease,transform 0.6s ease}
 .slide.active .fade-item{opacity:1;transform:translateY(0)}
 .slide.active .fade-item:nth-child(1){transition-delay:0.1s}
@@ -30,43 +30,81 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 .slide.active .fade-item:nth-child(6){transition-delay:0.85s}
 .slide.active .fade-item:nth-child(7){transition-delay:1.0s}
 .bullet-list{text-align:left;margin:20px auto;max-width:800px;list-style:none}
-.bullet-list li{padding:10px 0 10px 30px;position:relative;font-size:1.05rem;color:#cfd8dc;line-height:1.6}
-.bullet-list li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#00bcd4,#7c4dff);box-shadow:0 0 8px rgba(0,188,212,0.5)}
-.diagram-box{background:rgba(255,255,255,0.03);border:1px solid rgba(0,188,212,0.2);border-radius:16px;padding:30px;margin:20px auto;max-width:900px;position:relative;overflow:hidden}
-.diagram-box::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,188,212,0.5),transparent)}
-.glow-card{background:linear-gradient(135deg,rgba(0,30,60,0.6),rgba(20,10,50,0.6));border:1px solid rgba(124,77,255,0.2);border-radius:12px;padding:24px;margin:10px;flex:1;min-width:200px;backdrop-filter:blur(10px);box-shadow:0 4px 30px rgba(0,0,0,0.3)}
-.glow-card h4{color:#80deea;margin-bottom:8px;font-size:1.1rem}
-.glow-card p{font-size:0.95rem;color:#90a4ae}
-.cards-row{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:20px}
-.equation{font-family:'Courier New',monospace;background:rgba(0,0,0,0.4);border:1px solid rgba(0,188,212,0.15);border-radius:8px;padding:16px 24px;margin:12px auto;max-width:700px;font-size:1rem;color:#80deea;letter-spacing:0.5px}
-.nav-hint{position:fixed;bottom:12px;left:24px;font-size:0.75rem;color:rgba(255,255,255,0.3);z-index:1000}
-.comparison-table{width:100%;max-width:750px;margin:20px auto;border-collapse:collapse}
-.comparison-table th,.comparison-table td{padding:12px 16px;text-align:left;border-bottom:1px solid rgba(0,188,212,0.1)}
-.comparison-table th{color:#80deea;font-weight:600;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px}
-.comparison-table td{color:#b0bec5;font-size:0.95rem}
-.comparison-table tr:hover td{background:rgba(0,188,212,0.03)}
-.robot-visual{width:300px;height:250px;margin:20px auto;position:relative}
-.robot-arm{position:absolute;bottom:40px;left:50%;transform:translateX(-50%)}
-.lifting-diagram{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:20px auto;padding:20px}
-.lift-step{background:linear-gradient(135deg,rgba(0,60,80,0.8),rgba(20,20,60,0.8));border:1px solid rgba(0,188,212,0.4);border-radius:10px;padding:16px 22px;text-align:center;min-width:120px;box-shadow:0 0 15px rgba(0,188,212,0.1)}
-.lift-step .step-title{color:#00e5ff;font-weight:600;font-size:0.95rem;margin-bottom:4px}
-.lift-step .step-desc{color:#78909c;font-size:0.8rem}
-.arrow-right{color:#7c4dff;font-size:1.5rem;font-weight:bold}
-.block-diagram{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:20px auto;padding:10px}
-.block{background:linear-gradient(135deg,rgba(0,40,80,0.9),rgba(30,10,60,0.9));border:1px solid rgba(124,77,255,0.3);border-radius:8px;padding:12px 16px;text-align:center;font-size:0.85rem;color:#b2ebf2;min-width:100px;box-shadow:0 2px 15px rgba(0,0,0,0.3)}
-.block-arrow{color:#00bcd4;font-size:1.2rem}
-.highlight-box{background:linear-gradient(135deg,rgba(124,77,255,0.1),rgba(0,188,212,0.1));border:1px solid rgba(124,77,255,0.3);border-radius:10px;padding:20px;margin:15px auto;max-width:800px}
-.tag{display:inline-block;background:linear-gradient(135deg,#00bcd4,#7c4dff);color:#fff;padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600;margin:4px;letter-spacing:0.5px}
-.icon-bullet{display:flex;align-items:flex-start;gap:16px;text-align:left;margin:12px 0;padding:8px 0}
-.icon-bullet .icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#00bcd4,#7c4dff);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;box-shadow:0 2px 10px rgba(0,188,212,0.3)}
-.icon-bullet .text{color:#cfd8dc;font-size:1rem;line-height:1.5}
-.icon-bullet .text strong{color:#e0f7fa}
-.wave-visual{display:flex;justify-content:center;gap:30px;margin:20px auto;align-items:flex-end}
-.wave-bar{width:4px;border-radius:2px;background:linear-gradient(to top,#00bcd4,#7c4dff);animation:waveAnim 1.5s ease-in-out infinite alternate}
-@keyframes waveAnim{0%{height:20px}100%{height:60px}}
-.glare-effect{position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,200,0.6),transparent 70%);animation:glareMove 3s ease-in-out infinite alternate}
-@keyframes glareMove{0%{transform:translate(0,0);opacity:0.8}100%{transform:translate(30px,-20px);opacity:0.3}}
-.title-decoration{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,188,212,0.05),transparent 70%);pointer-events:none}
+.bullet-list li{padding:10px 0 10px 30px;position:relative;font-size:1.05rem;color:#334155;line-height:1.6}
+.bullet-list li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#0891b2,#7c3aed);box-shadow:0 0 8px rgba(124,58,237,0.4)}
+.diagram-box{background:rgba(255,255,255,0.75);border:1px solid rgba(124,58,237,0.18);border-radius:18px;padding:30px;margin:20px auto;max-width:960px;position:relative;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(15,23,42,0.06),0 2px 6px rgba(15,23,42,0.04)}
+.diagram-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0891b2,#7c3aed,#db2777,transparent)}
+.glow-card{background:rgba(255,255,255,0.85);border:1px solid rgba(124,58,237,0.16);border-radius:14px;padding:22px;margin:10px;flex:1;min-width:200px;backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(15,23,42,0.06),0 1px 3px rgba(15,23,42,0.04);transition:transform 0.3s ease,box-shadow 0.3s ease}
+.glow-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,58,237,0.12),0 2px 6px rgba(15,23,42,0.06)}
+.glow-card h4{color:#0e7490;margin-bottom:8px;font-size:1.05rem;font-weight:700}
+.glow-card p{font-size:0.95rem;color:#475569;line-height:1.55}
+.cards-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:20px}
+.equation{font-family:'JetBrains Mono','Courier New',monospace;background:linear-gradient(135deg,#f1f5f9,#eef2ff);border:1px solid rgba(124,58,237,0.18);border-radius:10px;padding:14px 22px;margin:12px auto;max-width:720px;font-size:1rem;color:#1e293b;letter-spacing:0.4px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 1px 2px rgba(15,23,42,0.04)}
+.equation strong{color:#7c3aed}
+.nav-hint{position:fixed;bottom:14px;left:24px;font-size:0.72rem;color:#94a3b8;z-index:1000;letter-spacing:0.5px}
+.comparison-table{width:100%;max-width:780px;margin:20px auto;border-collapse:separate;border-spacing:0;background:rgba(255,255,255,0.85);border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(15,23,42,0.06);border:1px solid rgba(124,58,237,0.12)}
+.comparison-table th,.comparison-table td{padding:13px 18px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.08)}
+.comparison-table th{color:#fff;font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:1.2px;background:linear-gradient(110deg,#0e7490,#7c3aed)}
+.comparison-table td{color:#334155;font-size:0.95rem}
+.comparison-table tr:last-child td{border-bottom:none}
+.comparison-table tbody tr:hover td{background:rgba(124,58,237,0.04)}
+.lifting-diagram{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px auto;padding:16px}
+.lift-step{background:linear-gradient(135deg,#ffffff,#f8fafc);border:1px solid rgba(8,145,178,0.3);border-radius:12px;padding:14px 20px;text-align:center;min-width:120px;box-shadow:0 4px 12px rgba(8,145,178,0.08),inset 0 1px 0 rgba(255,255,255,0.9)}
+.lift-step .step-title{color:#0891b2;font-weight:700;font-size:0.95rem;margin-bottom:4px}
+.lift-step .step-desc{color:#64748b;font-size:0.78rem;line-height:1.4}
+.arrow-right{color:#7c3aed;font-size:1.4rem;font-weight:bold}
+.block-diagram{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:20px auto;padding:10px}
+.block{background:#ffffff;border:1.5px solid rgba(124,58,237,0.3);border-radius:10px;padding:12px 14px;text-align:center;font-size:0.82rem;color:#1e293b;min-width:104px;box-shadow:0 3px 10px rgba(15,23,42,0.06);font-weight:500}
+.block-arrow{color:#0891b2;font-size:1.1rem;font-weight:bold}
+.highlight-box{background:linear-gradient(135deg,rgba(124,58,237,0.06),rgba(8,145,178,0.06),rgba(219,39,119,0.04));border:1px solid rgba(124,58,237,0.22);border-radius:14px;padding:22px;margin:15px auto;max-width:850px;box-shadow:0 4px 20px rgba(15,23,42,0.05)}
+.tag{display:inline-block;background:linear-gradient(110deg,#0891b2,#7c3aed,#db2777);color:#fff;padding:5px 14px;border-radius:20px;font-size:0.75rem;font-weight:600;margin:4px;letter-spacing:0.5px;box-shadow:0 2px 8px rgba(124,58,237,0.25)}
+.icon-bullet{display:flex;align-items:flex-start;gap:16px;text-align:left;margin:12px 0;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.7);border:1px solid rgba(124,58,237,0.1);transition:all 0.3s ease}
+.icon-bullet:hover{background:rgba(255,255,255,0.95);border-color:rgba(124,58,237,0.25);transform:translateX(4px)}
+.icon-bullet .icon{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0891b2,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;color:#fff;box-shadow:0 4px 12px rgba(124,58,237,0.3)}
+.icon-bullet .text{color:#334155;font-size:1rem;line-height:1.5}
+.icon-bullet .text strong{color:#0e7490;font-weight:700}
+
+/* === SLIDE 1 HERO STYLES === */
+.hero-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;width:100%;max-width:1180px;margin:0 auto;text-align:left}
+.hero-left{position:relative;z-index:3}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(255,255,255,0.85);border:1px solid rgba(124,58,237,0.25);border-radius:99px;font-size:0.72rem;font-weight:700;letter-spacing:1.5px;color:#7c3aed;text-transform:uppercase;backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(124,58,237,0.08)}
+.hero-eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:#db2777;box-shadow:0 0 0 0 rgba(219,39,119,0.6);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(219,39,119,0.5)}70%{box-shadow:0 0 0 10px rgba(219,39,119,0)}100%{box-shadow:0 0 0 0 rgba(219,39,119,0)}}
+.hero-title{font-size:3.4rem;font-weight:800;line-height:1.05;letter-spacing:-1.5px;margin:18px 0 8px 0;background:linear-gradient(110deg,#0891b2 0%,#7c3aed 50%,#db2777 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-title .accent-line{display:block;height:4px;width:120px;margin-top:14px;border-radius:2px;background:linear-gradient(90deg,#0891b2,#7c3aed,#db2777);box-shadow:0 2px 8px rgba(124,58,237,0.35)}
+.hero-sub{font-size:1.05rem;color:#475569;font-weight:400;margin-top:14px;line-height:1.55;max-width:480px}
+.author-card{display:inline-flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:24px;padding:14px 20px;background:rgba(255,255,255,0.92);border:1px solid rgba(124,58,237,0.18);border-radius:14px;box-shadow:0 6px 20px rgba(15,23,42,0.06);backdrop-filter:blur(8px)}
+.author-card .ac-label{font-size:0.7rem;font-weight:700;letter-spacing:1.8px;color:#7c3aed;text-transform:uppercase}
+.author-card .ac-names{font-size:1.05rem;font-weight:700;color:#1e293b;line-height:1.4}
+.author-card .ac-school{font-size:0.78rem;color:#64748b;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-top:2px}
+.hero-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px}
+.date-badge{position:absolute;top:32px;right:32px;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(255,255,255,0.9);border:1px solid rgba(8,145,178,0.3);border-radius:99px;font-size:0.78rem;font-weight:700;color:#0e7490;letter-spacing:1px;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(8,145,178,0.1);z-index:20}
+.date-badge svg{width:14px;height:14px}
+.scroll-hint{position:absolute;bottom:48px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:#64748b;font-size:0.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;z-index:20}
+.scroll-hint .chevron{width:22px;height:22px;animation:bounce 1.8s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:0.6}50%{transform:translateY(6px);opacity:1}}
+.hero-visual{position:relative;width:100%;height:520px;display:flex;align-items:center;justify-content:center}
+.hero-visual svg{width:100%;height:100%;max-width:560px}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes spin-rev{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}
+@keyframes float-y{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.ring-spin{animation:spin-slow 28s linear infinite;transform-origin:center}
+.ring-rev{animation:spin-rev 22s linear infinite;transform-origin:center}
+.float-1{animation:float-y 4s ease-in-out infinite}
+.float-2{animation:float-y 5s ease-in-out infinite 0.5s}
+
+/* === SLIDE 3 SCENE CARDS === */
+.scenes-row{display:flex;gap:18px;justify-content:center;align-items:stretch;flex-wrap:wrap;margin:18px auto}
+.scene-card{flex:1;min-width:200px;max-width:240px;background:#ffffff;border-radius:14px;border:1px solid rgba(124,58,237,0.16);overflow:hidden;box-shadow:0 6px 22px rgba(15,23,42,0.07);display:flex;flex-direction:column}
+.scene-card .scene-canvas{position:relative;height:140px;background:#f1f5f9;border-bottom:1px solid rgba(124,58,237,0.1);overflow:hidden}
+.scene-card .scene-label{padding:10px 12px 4px;font-size:0.78rem;font-weight:700;color:#0e7490;letter-spacing:0.5px;text-align:center}
+.scene-card .scene-sublabel{padding:0 12px 8px;font-size:0.7rem;color:#64748b;text-align:center;font-style:italic}
+.scene-card .err-bar{height:6px;margin:0 12px 10px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.scene-card .err-bar > span{display:block;height:100%;border-radius:3px}
+.scene-card .err-tag{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 12px 12px;font-size:0.74rem;font-weight:700}
+.result-arrow{display:flex;justify-content:center;margin:8px auto;color:#db2777}
+.result-box{margin:0 auto;max-width:560px;padding:14px 22px;background:linear-gradient(110deg,rgba(219,39,119,0.08),rgba(124,58,237,0.06));border:1.5px solid rgba(219,39,119,0.3);border-radius:12px;color:#1e293b;font-weight:600;font-size:0.98rem;box-shadow:0 4px 16px rgba(219,39,119,0.08);text-align:center}
+.result-box strong{color:#db2777}
 </style>
 </head>
 <body>
@@ -75,71 +113,271 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 <div id="slide-counter">1 / 9</div>
 <div class="nav-hint">&#8592; &#8594; Arrow keys or click to navigate</div>
 
-<!-- SLIDE 1: Title -->
+<!-- SLIDE 1: Title (REDESIGNED) -->
 <div class="slide active" id="slide-1">
-<div class="slide-content">
-<div class="fade-item">
-<svg width="80" height="80" viewBox="0 0 80 80" style="margin-bottom:20px;opacity:0.8">
-<circle cx="40" cy="40" r="35" fill="none" stroke="url(#grad1)" stroke-width="1.5" stroke-dasharray="4 4">
-<animateTransform attributeName="transform" type="rotate" from="0 40 40" to="360 40 40" dur="20s" repeatCount="indefinite"/>
-</circle>
-<circle cx="40" cy="40" r="25" fill="none" stroke="url(#grad1)" stroke-width="1" opacity="0.5">
-<animateTransform attributeName="transform" type="rotate" from="360 40 40" to="0 40 40" dur="15s" repeatCount="indefinite"/>
-</circle>
-<circle cx="40" cy="40" r="6" fill="#00bcd4" opacity="0.8">
-<animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite"/>
-</circle>
-<line x1="40" y1="15" x2="40" y2="5" stroke="#7c4dff" stroke-width="1" opacity="0.6"/>
-<line x1="65" y1="40" x2="75" y2="40" stroke="#7c4dff" stroke-width="1" opacity="0.6"/>
-<line x1="40" y1="65" x2="40" y2="75" stroke="#7c4dff" stroke-width="1" opacity="0.6"/>
-<line x1="15" y1="40" x2="5" y2="40" stroke="#7c4dff" stroke-width="1" opacity="0.6"/>
-<defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00bcd4"/><stop offset="100%" stop-color="#7c4dff"/></linearGradient></defs>
-</svg>
+<div class="date-badge fade-item">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+DEFENSE 2025-2026
 </div>
-<h1 class="fade-item" style="font-size:2.4rem;line-height:1.3">DIRECT VISUAL SERVOING<br>USING MULTISCALE DECOMPOSITION</h1>
-<p class="subtitle fade-item">Engineering Thesis Defense (Soutenance d'Ingéniorat)</p>
-<p class="authors fade-item">ABBOU Ahmed Mohammed &amp; KHEROUAA Alaa Eddine</p>
-<p class="school fade-item">ESG2E Oran &bull; 2025-2026</p>
-<div class="fade-item" style="margin-top:30px;display:flex;gap:8px;justify-content:center">
+<div class="slide-content" style="max-width:1280px">
+<div class="hero-wrap">
+<!-- LEFT: Title block -->
+<div class="hero-left">
+<div class="fade-item"><span class="hero-eyebrow"><span class="pulse"></span>Engineering Thesis Defense</span></div>
+<h1 class="hero-title fade-item">Direct Visual<br>Servoing<br><span style="background:linear-gradient(110deg,#db2777,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">via Multiscale Decomposition</span><span class="accent-line"></span></h1>
+<p class="hero-sub fade-item">Robust photometric control through wavelet-based representations &mdash; bringing resilience to illumination drift and specular glare.</p>
+<div class="fade-item author-card">
+<span class="ac-label">Presented by</span>
+<span class="ac-names">ABBOU Ahmed Mohammed<br>KHEROUAA Alaa Eddine</span>
+<span class="ac-school">ESG2E Oran</span>
+</div>
+<div class="fade-item hero-tags">
 <span class="tag">Visual Servoing</span>
 <span class="tag">Wavelet Transform</span>
 <span class="tag">Robotics</span>
+<span class="tag">ViSP</span>
+</div>
+</div>
+
+<!-- RIGHT: Hero visual -->
+<div class="fade-item hero-visual">
+<svg viewBox="0 0 560 520" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs>
+<linearGradient id="hero-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#0891b2"/>
+<stop offset="50%" stop-color="#7c3aed"/>
+<stop offset="100%" stop-color="#db2777"/>
+</linearGradient>
+<linearGradient id="hero-grad-2" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#7c3aed" stop-opacity="0.85"/>
+<stop offset="100%" stop-color="#db2777" stop-opacity="0.4"/>
+</linearGradient>
+<linearGradient id="hero-grad-3" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#0891b2" stop-opacity="0.4"/>
+<stop offset="100%" stop-color="#7c3aed" stop-opacity="0.15"/>
+</linearGradient>
+<linearGradient id="cone-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+<stop offset="0%" stop-color="#fef3c7" stop-opacity="0.95"/>
+<stop offset="100%" stop-color="#fde68a" stop-opacity="0.05"/>
+</linearGradient>
+<linearGradient id="band-1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0891b2" stop-opacity="0.7"/><stop offset="100%" stop-color="#0891b2" stop-opacity="0.05"/></linearGradient>
+<linearGradient id="band-2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#059669" stop-opacity="0.7"/><stop offset="100%" stop-color="#059669" stop-opacity="0.05"/></linearGradient>
+<linearGradient id="band-3" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#d97706" stop-opacity="0.7"/><stop offset="100%" stop-color="#d97706" stop-opacity="0.05"/></linearGradient>
+<linearGradient id="band-4" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#db2777" stop-opacity="0.7"/><stop offset="100%" stop-color="#db2777" stop-opacity="0.05"/></linearGradient>
+<linearGradient id="band-5" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.7"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0.05"/></linearGradient>
+<filter id="hero-glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+
+<!-- Decomposition grid (background) -->
+<g opacity="0.3">
+<rect x="380" y="40" width="140" height="140" fill="none" stroke="#7c3aed" stroke-width="0.7" stroke-dasharray="3 3"/>
+<line x1="450" y1="40" x2="450" y2="180" stroke="#7c3aed" stroke-width="0.7" stroke-dasharray="3 3"/>
+<line x1="380" y1="110" x2="520" y2="110" stroke="#7c3aed" stroke-width="0.7" stroke-dasharray="3 3"/>
+<line x1="415" y1="40" x2="415" y2="110" stroke="#0891b2" stroke-width="0.5" stroke-dasharray="2 2"/>
+<line x1="380" y1="75" x2="450" y2="75" stroke="#0891b2" stroke-width="0.5" stroke-dasharray="2 2"/>
+<text x="397" y="60" font-size="9" fill="#0891b2" font-weight="700" text-anchor="middle">LL</text>
+<text x="432" y="60" font-size="9" fill="#7c3aed" font-weight="700" text-anchor="middle">HL</text>
+<text x="397" y="95" font-size="9" fill="#7c3aed" font-weight="700" text-anchor="middle">LH</text>
+<text x="432" y="95" font-size="9" fill="#db2777" font-weight="700" text-anchor="middle">HH</text>
+<text x="485" y="80" font-size="10" fill="#7c3aed" font-weight="700" text-anchor="middle">HL</text>
+<text x="450" y="150" font-size="10" fill="#7c3aed" font-weight="700" text-anchor="middle">LH</text>
+<text x="485" y="150" font-size="10" fill="#db2777" font-weight="700" text-anchor="middle">HH</text>
+</g>
+
+<!-- Outer rotating ring -->
+<g transform="translate(280 260)" class="ring-spin">
+<circle r="240" fill="none" stroke="url(#hero-grad-1)" stroke-width="1.5" stroke-dasharray="6 12" opacity="0.4"/>
+<circle cx="240" cy="0" r="4" fill="#0891b2"/>
+<circle cx="-240" cy="0" r="4" fill="#db2777"/>
+</g>
+
+<!-- Inner counter ring -->
+<g transform="translate(280 260)" class="ring-rev">
+<circle r="200" fill="none" stroke="#7c3aed" stroke-width="1" stroke-dasharray="2 8" opacity="0.35"/>
+<circle cx="0" cy="-200" r="3" fill="#7c3aed"/>
+</g>
+
+<!-- Translucent overlapping circles -->
+<circle cx="160" cy="180" r="100" fill="url(#hero-grad-3)" opacity="0.7"/>
+<circle cx="240" cy="240" r="120" fill="url(#hero-grad-1)" opacity="0.18"/>
+<circle cx="380" cy="380" r="90" fill="url(#hero-grad-2)" opacity="0.25"/>
+
+<!-- Robot arm silhouette -->
+<g transform="translate(140 380)">
+<!-- Base -->
+<rect x="-50" y="40" width="100" height="22" rx="4" fill="#1e293b" opacity="0.85"/>
+<rect x="-40" y="20" width="80" height="22" rx="3" fill="#334155"/>
+<!-- Shoulder joint -->
+<circle cx="0" cy="20" r="14" fill="#0891b2"/>
+<circle cx="0" cy="20" r="6" fill="#1e293b"/>
+<!-- Upper arm -->
+<rect x="-10" y="-60" width="20" height="80" rx="6" fill="#334155" transform="rotate(-25 0 20)"/>
+<!-- Elbow joint -->
+<circle cx="-34" cy="-50" r="11" fill="#7c3aed"/>
+<circle cx="-34" cy="-50" r="5" fill="#1e293b"/>
+<!-- Forearm -->
+<rect x="-44" y="-120" width="20" height="74" rx="6" fill="#475569" transform="rotate(15 -34 -50)"/>
+<!-- Wrist joint -->
+<circle cx="-12" cy="-110" r="9" fill="#db2777"/>
+</g>
+
+<!-- Camera at end-effector -->
+<g transform="translate(128 270)" class="float-1" filter="url(#hero-glow)">
+<rect x="-26" y="-18" width="52" height="36" rx="5" fill="#1e293b"/>
+<rect x="-26" y="-22" width="20" height="6" rx="2" fill="#334155"/>
+<circle cx="0" cy="0" r="13" fill="#0f172a" stroke="#0891b2" stroke-width="1.5"/>
+<circle cx="0" cy="0" r="8" fill="#0891b2" opacity="0.7"/>
+<circle cx="-3" cy="-3" r="3" fill="#fef3c7" opacity="0.85"/>
+<circle cx="18" cy="-12" r="2.5" fill="#db2777"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+</g>
+
+<!-- Light cone breaking into wavelet bands -->
+<g opacity="0.92">
+<polygon points="155,270 540,180 540,360" fill="url(#cone-grad)" opacity="0.55"/>
+<!-- Wavelet bands emerging from the cone -->
+<path d="M 280 235 Q 380 220 540 198" fill="none" stroke="url(#band-1)" stroke-width="6" stroke-linecap="round"/>
+<path d="M 290 252 Q 390 248 540 232" fill="none" stroke="url(#band-2)" stroke-width="6" stroke-linecap="round"/>
+<path d="M 295 270 Q 395 270 540 270" fill="none" stroke="url(#band-3)" stroke-width="6" stroke-linecap="round"/>
+<path d="M 290 288 Q 390 292 540 308" fill="none" stroke="url(#band-4)" stroke-width="6" stroke-linecap="round"/>
+<path d="M 280 305 Q 380 320 540 342" fill="none" stroke="url(#band-5)" stroke-width="6" stroke-linecap="round"/>
+</g>
+
+<!-- Floating wavelet waveforms -->
+<g class="float-2" opacity="0.85">
+<path d="M 350 100 Q 360 75 370 100 T 390 100 T 410 100 T 430 100 T 450 100" fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round"/>
+<path d="M 360 425 Q 370 410 380 425 T 400 425 T 420 425 T 440 425" fill="none" stroke="#db2777" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+</g>
+
+<!-- Tiny accent dots -->
+<circle cx="500" cy="450" r="4" fill="#7c3aed" opacity="0.6"><animate attributeName="r" values="3;5;3" dur="2.4s" repeatCount="indefinite"/></circle>
+<circle cx="60" cy="80" r="3.5" fill="#0891b2" opacity="0.55"><animate attributeName="r" values="2.5;4.5;2.5" dur="2.8s" repeatCount="indefinite"/></circle>
+<circle cx="510" cy="90" r="3" fill="#db2777" opacity="0.55"/>
+</svg>
 </div>
 </div>
 </div>
 
-<!-- SLIDE 2: General Context -->
+<div class="scroll-hint fade-item">
+<span>Click or press &rarr; to start</span>
+<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+</div>
+
+<!-- SLIDE 2: General Context (REDESIGNED ROBOT DIAGRAM) -->
 <div class="slide" id="slide-2">
 <div class="slide-content">
 <h2 class="fade-item">General Context</h2>
 <p class="desc fade-item" style="margin-bottom:24px">Computer vision enables robots to perceive and interact with their environment. Visual servoing closes the control loop using visual feedback.</p>
-<div class="diagram-box fade-item">
-<svg width="100%" height="200" viewBox="0 0 700 200" style="max-width:700px">
-<!-- Robot base -->
-<rect x="80" y="160" width="80" height="30" rx="4" fill="rgba(0,188,212,0.2)" stroke="#00bcd4" stroke-width="1"/>
-<text x="120" y="180" fill="#80deea" font-size="10" text-anchor="middle">Base</text>
-<!-- Arm segment 1 -->
-<rect x="105" y="100" width="30" height="65" rx="4" fill="rgba(124,77,255,0.15)" stroke="#7c4dff" stroke-width="1"/>
-<!-- Arm segment 2 -->
-<rect x="95" y="55" width="50" height="20" rx="4" fill="rgba(124,77,255,0.15)" stroke="#7c4dff" stroke-width="1" transform="rotate(-30 120 65)"/>
-<!-- Joint circles -->
-<circle cx="120" cy="100" r="6" fill="#7c4dff" opacity="0.8"/>
-<circle cx="120" cy="60" r="5" fill="#7c4dff" opacity="0.8"/>
-<!-- End effector with camera -->
-<rect x="140" y="30" width="35" height="25" rx="3" fill="rgba(0,188,212,0.3)" stroke="#00e5ff" stroke-width="1.5"/>
-<text x="157" y="47" fill="#00e5ff" font-size="9" text-anchor="middle">Camera</text>
-<circle cx="157" cy="37" r="4" fill="none" stroke="#00e5ff" stroke-width="1"/>
-<!-- Visual cone -->
-<polygon points="175,42 280,20 280,80" fill="rgba(0,188,212,0.05)" stroke="rgba(0,188,212,0.3)" stroke-width="0.5" stroke-dasharray="3 2"/>
-<!-- Target object -->
-<rect x="290" y="35" width="50" height="40" rx="4" fill="rgba(0,230,118,0.1)" stroke="#00e676" stroke-width="1"/>
-<text x="315" y="58" fill="#00e676" font-size="9" text-anchor="middle">Target</text>
-<!-- Label -->
-<text x="350" y="130" fill="#78909c" font-size="12" text-anchor="middle">Eye-in-Hand Configuration</text>
-<text x="350" y="150" fill="#546e7a" font-size="10" text-anchor="middle">Camera embedded on end-effector</text>
-<!-- Feedback arrow -->
-<path d="M 315 80 Q 315 140 200 170 Q 130 185 120 190" fill="none" stroke="#00bcd4" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<text x="260" y="135" fill="#00bcd4" font-size="9" opacity="0.7">Visual Feedback</text>
+<div class="diagram-box fade-item" style="max-width:780px">
+<svg width="100%" height="340" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="seg-grad-1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0891b2"/><stop offset="100%" stop-color="#0e7490"/></linearGradient>
+<linearGradient id="seg-grad-2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#1e88e5"/><stop offset="100%" stop-color="#1565c0"/></linearGradient>
+<linearGradient id="seg-grad-3" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#5e35b1"/><stop offset="100%" stop-color="#4527a0"/></linearGradient>
+<linearGradient id="seg-grad-4" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#6d28d9"/></linearGradient>
+<linearGradient id="floor-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#e2e8f0" stop-opacity="0.9"/><stop offset="100%" stop-color="#e2e8f0" stop-opacity="0"/></linearGradient>
+<linearGradient id="fov-grad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fef3c7" stop-opacity="0.85"/><stop offset="100%" stop-color="#fde68a" stop-opacity="0.05"/></linearGradient>
+<linearGradient id="target-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#059669"/></linearGradient>
+<filter id="soft-shadow"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="2" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+
+<!-- Floor shadow -->
+<ellipse cx="170" cy="298" rx="90" ry="9" fill="url(#floor-grad)"/>
+
+<!-- Robot base (segmented industrial style) -->
+<rect x="120" y="270" width="100" height="22" rx="3" fill="#334155" filter="url(#soft-shadow)"/>
+<rect x="135" y="252" width="70" height="22" rx="3" fill="#475569"/>
+<text x="170" y="287" font-size="10" font-weight="700" fill="#f8fafc" text-anchor="middle">BASE</text>
+
+<!-- Shoulder joint (J1) -->
+<circle cx="170" cy="248" r="14" fill="url(#seg-grad-1)" filter="url(#soft-shadow)"/>
+<circle cx="170" cy="248" r="6" fill="#0e7490"/>
+<text x="155" y="252" font-size="8" font-weight="700" fill="#0e7490" text-anchor="end">J1</text>
+
+<!-- Upper arm (link 1) -->
+<g transform="rotate(-30 170 248)">
+<rect x="160" y="170" width="20" height="80" rx="5" fill="url(#seg-grad-2)" filter="url(#soft-shadow)"/>
+</g>
+
+<!-- Elbow joint (J2) -->
+<circle cx="130" cy="180" r="13" fill="url(#seg-grad-3)" filter="url(#soft-shadow)"/>
+<circle cx="130" cy="180" r="5" fill="#311b92"/>
+<text x="115" y="184" font-size="8" font-weight="700" fill="#4527a0" text-anchor="end">J2</text>
+
+<!-- Forearm (link 2) -->
+<g transform="rotate(35 130 180)">
+<rect x="120" y="105" width="20" height="80" rx="5" fill="url(#seg-grad-3)" filter="url(#soft-shadow)"/>
+</g>
+
+<!-- Wrist joint (J3) -->
+<circle cx="195" cy="135" r="11" fill="url(#seg-grad-4)" filter="url(#soft-shadow)"/>
+<circle cx="195" cy="135" r="4" fill="#4c1d95"/>
+<text x="180" y="125" font-size="8" font-weight="700" fill="#6d28d9" text-anchor="end">J3</text>
+
+<!-- End-effector flange -->
+<rect x="206" y="124" width="22" height="22" rx="3" fill="#475569" filter="url(#soft-shadow)"/>
+<circle cx="232" cy="135" r="5" fill="#1e293b"/>
+
+<!-- CAMERA at end-effector -->
+<g transform="translate(258 135)" filter="url(#soft-shadow)">
+<!-- Camera body -->
+<rect x="-18" y="-16" width="46" height="32" rx="4" fill="#1e293b"/>
+<!-- Top viewfinder -->
+<rect x="-14" y="-22" width="14" height="6" rx="1.5" fill="#334155"/>
+<!-- Lens housing -->
+<circle cx="6" cy="0" r="14" fill="#0f172a" stroke="#0891b2" stroke-width="2"/>
+<circle cx="6" cy="0" r="9" fill="#0e7490"/>
+<circle cx="6" cy="0" r="5" fill="#0891b2"/>
+<circle cx="3" cy="-3" r="2" fill="#fef3c7" opacity="0.9"/>
+<!-- Recording dot -->
+<circle cx="22" cy="-10" r="2.5" fill="#db2777"><animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/></circle>
+</g>
+
+<!-- Field of view cone projecting to target -->
+<polygon points="290,135 530,75 530,195" fill="url(#fov-grad)" opacity="0.7" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.5"/>
+<!-- FOV center axis -->
+<line x1="290" y1="135" x2="530" y2="135" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="2 4" opacity="0.5"/>
+
+<!-- Target object (3D-looking box with grid pattern) -->
+<g transform="translate(530 100)">
+<!-- Top face -->
+<polygon points="0,0 60,-15 90,5 30,20" fill="#10b981" opacity="0.85"/>
+<!-- Front face -->
+<rect x="0" y="20" width="60" height="55" fill="url(#target-grad)"/>
+<!-- Right face -->
+<polygon points="60,20 90,5 90,60 60,75" fill="#047857"/>
+<!-- Grid lines on front face -->
+<line x1="20" y1="20" x2="20" y2="75" stroke="#a7f3d0" stroke-width="0.6" opacity="0.7"/>
+<line x1="40" y1="20" x2="40" y2="75" stroke="#a7f3d0" stroke-width="0.6" opacity="0.7"/>
+<line x1="0" y1="40" x2="60" y2="40" stroke="#a7f3d0" stroke-width="0.6" opacity="0.7"/>
+<line x1="0" y1="58" x2="60" y2="58" stroke="#a7f3d0" stroke-width="0.6" opacity="0.7"/>
+</g>
+
+<!-- LABELS with leader lines -->
+<!-- Camera label -->
+<line x1="262" y1="105" x2="262" y2="65" stroke="#0891b2" stroke-width="1" stroke-dasharray="2 2"/>
+<rect x="180" y="46" width="180" height="22" rx="11" fill="#ffffff" stroke="#0891b2" stroke-width="1"/>
+<text x="270" y="61" font-size="11" fill="#0e7490" font-weight="700" text-anchor="middle">End-effector camera (eye-in-hand)</text>
+
+<!-- FOV label -->
+<line x1="410" y1="105" x2="410" y2="35" stroke="#f59e0b" stroke-width="1" stroke-dasharray="2 2"/>
+<rect x="362" y="14" width="100" height="22" rx="11" fill="#ffffff" stroke="#f59e0b" stroke-width="1"/>
+<text x="412" y="29" font-size="11" fill="#b45309" font-weight="700" text-anchor="middle">Field of view</text>
+
+<!-- Target label -->
+<line x1="575" y1="180" x2="575" y2="220" stroke="#059669" stroke-width="1" stroke-dasharray="2 2"/>
+<rect x="525" y="222" width="100" height="22" rx="11" fill="#ffffff" stroke="#059669" stroke-width="1"/>
+<text x="575" y="237" font-size="11" fill="#047857" font-weight="700" text-anchor="middle">Target scene</text>
+
+<!-- Visual feedback loop arrow (curved) -->
+<path d="M 590 195 Q 660 240 600 295 Q 480 325 280 305 Q 200 300 175 296" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4" opacity="0.65"/>
+<!-- Arrowhead -->
+<polygon points="178,296 188,290 188,302" fill="#7c3aed" opacity="0.85"/>
+<rect x="365" y="305" width="180" height="22" rx="11" fill="#ffffff" stroke="#7c3aed" stroke-width="1"/>
+<text x="455" y="320" font-size="11" fill="#7c3aed" font-weight="700" text-anchor="middle">Visual feedback loop</text>
+
+<!-- Subtle base label -->
+<text x="170" y="324" font-size="9" fill="#64748b" text-anchor="middle" letter-spacing="1.5">6-DOF INDUSTRIAL ROBOT</text>
 </svg>
 </div>
 <div class="cards-row fade-item">
@@ -150,41 +388,137 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 </div>
 </div>
 
-<!-- SLIDE 3: Problem Statement -->
+<!-- SLIDE 3: Problem Statement (REDESIGNED) -->
 <div class="slide" id="slide-3">
 <div class="slide-content">
 <h2 class="fade-item">Problem Statement</h2>
-<p class="desc fade-item">Pure Photometric Visual Servoing (PVS) relies on the brightness constancy assumption, making it vulnerable to real-world illumination changes.</p>
-<div class="diagram-box fade-item" style="display:flex;justify-content:center;gap:40px;align-items:center;flex-wrap:wrap">
-<div style="text-align:center;position:relative;width:180px;height:140px">
-<svg width="180" height="140" viewBox="0 0 180 140">
-<rect x="20" y="20" width="140" height="100" rx="6" fill="rgba(0,50,80,0.4)" stroke="#00bcd4" stroke-width="1"/>
-<rect x="40" y="40" width="40" height="40" fill="rgba(0,188,212,0.3)" stroke="#00bcd4" stroke-width="0.5"/>
-<circle cx="120" cy="60" r="20" fill="rgba(124,77,255,0.3)" stroke="#7c4dff" stroke-width="0.5"/>
-<text x="90" y="135" fill="#80deea" font-size="10" text-anchor="middle">Ideal conditions</text>
+<p class="desc fade-item" style="margin-bottom:18px">Pure Photometric Visual Servoing (PVS) relies on the brightness constancy assumption, making it vulnerable to real-world illumination changes.</p>
+
+<div class="fade-item scenes-row">
+<!-- CARD 1: Reference -->
+<div class="scene-card">
+<div class="scene-canvas">
+<svg width="100%" height="100%" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice">
+<rect width="200" height="140" fill="#f8fafc"/>
+<!-- Checkerboard -->
+<g>
+<rect x="20" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="60" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="100" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="140" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="40" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="80" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="120" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="20" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="60" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="100" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="140" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="40" y="80" width="20" height="20" fill="#1e293b"/>
+<rect x="80" y="80" width="20" height="20" fill="#1e293b"/>
+<rect x="120" y="80" width="20" height="20" fill="#1e293b"/>
+</g>
+<!-- Border -->
+<rect x="18" y="18" width="164" height="104" fill="none" stroke="#0891b2" stroke-width="1.5" rx="2"/>
 </svg>
-<div style="position:absolute;top:5px;right:5px;color:#00e676;font-size:0.7rem">&#10003; Stable</div>
 </div>
-<div style="font-size:2rem;color:#7c4dff">&#8594;</div>
-<div style="text-align:center;position:relative;width:180px;height:140px">
-<svg width="180" height="140" viewBox="0 0 180 140">
-<rect x="20" y="20" width="140" height="100" rx="6" fill="rgba(80,50,0,0.3)" stroke="#ff6d00" stroke-width="1"/>
-<rect x="40" y="40" width="40" height="40" fill="rgba(255,200,0,0.15)" stroke="#ffab00" stroke-width="0.5"/>
-<circle cx="120" cy="60" r="20" fill="rgba(255,100,0,0.15)" stroke="#ff6d00" stroke-width="0.5"/>
-<!-- Glare effect -->
-<circle cx="80" cy="60" r="30" fill="radial-gradient(circle,rgba(255,255,200,0.4),transparent)" opacity="0.6"/>
-<circle cx="80" cy="60" r="25" fill="none" stroke="rgba(255,255,200,0.3)" stroke-width="8" opacity="0.4"/>
-<text x="90" y="135" fill="#ffab00" font-size="10" text-anchor="middle">Lighting change + glare</text>
+<div class="scene-label">Reference image I*</div>
+<div class="scene-sublabel">Normal illumination</div>
+<div class="err-bar"><span style="width:8%;background:linear-gradient(90deg,#10b981,#059669)"></span></div>
+<div class="err-tag" style="color:#059669">&#10003; Photometric error: low</div>
+</div>
+
+<!-- CARD 2: Lighting change -->
+<div class="scene-card">
+<div class="scene-canvas">
+<svg width="100%" height="100%" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice">
+<defs>
+<linearGradient id="dark-overlay" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#1e293b" stop-opacity="0.05"/>
+<stop offset="100%" stop-color="#7c2d12" stop-opacity="0.55"/>
+</linearGradient>
+</defs>
+<rect width="200" height="140" fill="#fef3c7"/>
+<!-- Same checkerboard -->
+<g opacity="0.85">
+<rect x="20" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="60" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="100" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="140" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="40" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="80" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="120" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="20" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="60" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="100" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="140" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="40" y="80" width="20" height="20" fill="#1e293b"/>
+<rect x="80" y="80" width="20" height="20" fill="#1e293b"/>
+<rect x="120" y="80" width="20" height="20" fill="#1e293b"/>
+</g>
+<!-- Warm/dark gradient overlay -->
+<rect x="18" y="18" width="164" height="104" fill="url(#dark-overlay)" rx="2"/>
+<rect x="18" y="18" width="164" height="104" fill="none" stroke="#d97706" stroke-width="1.5" rx="2"/>
 </svg>
-<div style="position:absolute;top:5px;right:5px;color:#ff5252;font-size:0.7rem">&#10007; Fails</div>
+</div>
+<div class="scene-label">Illumination drift</div>
+<div class="scene-sublabel">Same scene, warmer/darker</div>
+<div class="err-bar"><span style="width:55%;background:linear-gradient(90deg,#fbbf24,#d97706)"></span></div>
+<div class="err-tag" style="color:#b45309">&#9888; Photometric error: rising</div>
+</div>
+
+<!-- CARD 3: Glare attack -->
+<div class="scene-card">
+<div class="scene-canvas">
+<svg width="100%" height="100%" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice">
+<defs>
+<radialGradient id="glare-blob" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+<stop offset="40%" stop-color="#fef3c7" stop-opacity="0.85"/>
+<stop offset="100%" stop-color="#fef3c7" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<rect width="200" height="140" fill="#f8fafc"/>
+<!-- Same checkerboard -->
+<g>
+<rect x="20" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="60" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="100" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="140" y="20" width="20" height="20" fill="#1e293b"/>
+<rect x="40" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="80" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="120" y="40" width="20" height="20" fill="#1e293b"/>
+<rect x="20" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="60" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="100" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="140" y="60" width="20" height="20" fill="#1e293b"/>
+<rect x="40" y="80" width="20" height="20" fill="#1e293b"/>
+<rect x="80" y="80" width="20" height="20" fill="#1e293b"/>
+<rect x="120" y="80" width="20" height="20" fill="#1e293b"/>
+</g>
+<!-- Lens flare blob -->
+<circle cx="105" cy="65" r="55" fill="url(#glare-blob)"/>
+<!-- Streak -->
+<ellipse cx="105" cy="65" rx="80" ry="6" fill="#ffffff" opacity="0.45" transform="rotate(-20 105 65)"/>
+<!-- Star spike -->
+<line x1="35" y1="25" x2="170" y2="105" stroke="#ffffff" stroke-width="0.8" opacity="0.5"/>
+<line x1="170" y1="25" x2="35" y2="105" stroke="#ffffff" stroke-width="0.8" opacity="0.5"/>
+<rect x="18" y="18" width="164" height="104" fill="none" stroke="#db2777" stroke-width="1.5" rx="2"/>
+</svg>
+</div>
+<div class="scene-label">Specular glare</div>
+<div class="scene-sublabel">Bright reflection on lens</div>
+<div class="err-bar"><span style="width:95%;background:linear-gradient(90deg,#f43f5e,#db2777)"></span></div>
+<div class="err-tag" style="color:#be185d">&#10007; Photometric error: explodes</div>
 </div>
 </div>
-<ul class="bullet-list fade-item">
-<li>Strong dependency on the brightness constancy assumption</li>
-<li>Dynamic lighting variations cause large photometric errors</li>
-<li>Glare and specular reflections corrupt pixel intensities</li>
-<li>Convergence failure or divergence in real-world conditions</li>
-</ul>
+
+<div class="fade-item result-arrow">
+<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+</div>
+
+<div class="fade-item result-box">
+<strong>PVS error explodes &rarr;</strong> the control law diverges and the robot fails to converge on the target.
+</div>
 </div>
 </div>
 
@@ -192,7 +526,7 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 <div class="slide" id="slide-4">
 <div class="slide-content">
 <h2 class="fade-item">Objectives &amp; Contributions</h2>
-<div style="max-width:800px;margin:0 auto">
+<div style="max-width:840px;margin:0 auto">
 <div class="icon-bullet fade-item">
 <div class="icon">&#9670;</div>
 <div class="text"><strong>Multiscale Decomposition:</strong> Improve robustness by separating illumination (low-frequency) from structural details (high-frequency)</div>
@@ -203,7 +537,7 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 </div>
 <div class="icon-bullet fade-item">
 <div class="icon">&#9656;</div>
-<div class="text"><strong>LWT-PVS:</strong> Computationally optimized variant using the Lifting Wavelet Transform -- avoids complex multiplications for real-time performance</div>
+<div class="text"><strong>LWT-PVS:</strong> Computationally optimized variant using the Lifting Wavelet Transform &mdash; avoids complex multiplications for real-time performance</div>
 </div>
 <div class="icon-bullet fade-item">
 <div class="icon">&#8635;</div>
@@ -227,14 +561,14 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 <tr><th>Approach</th><th>Features Used</th><th>Advantages</th><th>Limitations</th></tr>
 </thead>
 <tbody>
-<tr><td style="color:#00e5ff;font-weight:600">IBVS</td><td>Image features (points, lines)</td><td>No 3D model needed</td><td>Local minima, feature extraction cost</td></tr>
-<tr><td style="color:#7c4dff;font-weight:600">PBVS</td><td>3D pose estimation</td><td>Decoupled control</td><td>Requires accurate 3D model</td></tr>
-<tr><td style="color:#00e676;font-weight:600">PVS (Direct)</td><td>Raw pixel intensities</td><td>No feature extraction needed</td><td>Sensitive to illumination</td></tr>
+<tr><td style="color:#0891b2;font-weight:700">IBVS</td><td>Image features (points, lines)</td><td>No 3D model needed</td><td>Local minima, feature extraction cost</td></tr>
+<tr><td style="color:#7c3aed;font-weight:700">PBVS</td><td>3D pose estimation</td><td>Decoupled control</td><td>Requires accurate 3D model</td></tr>
+<tr><td style="color:#059669;font-weight:700">PVS (Direct)</td><td>Raw pixel intensities</td><td>No feature extraction needed</td><td>Sensitive to illumination</td></tr>
 </tbody>
 </table>
 <div class="highlight-box fade-item">
-<h3 style="color:#00e5ff;margin-bottom:8px">Direct Photometric Visual Servoing (PVS)</h3>
-<p style="font-size:0.95rem;color:#90a4ae">Uses the entire image as a feature vector. The error signal is computed directly from pixel intensity differences between the current and desired images. Elegant but fragile under non-ideal conditions.</p>
+<h3 style="color:#0e7490;margin-bottom:8px">Direct Photometric Visual Servoing (PVS)</h3>
+<p style="font-size:0.95rem;color:#475569">Uses the entire image as a feature vector. The error signal is computed directly from pixel intensity differences between the current and desired images. Elegant but fragile under non-ideal conditions.</p>
 </div>
 <div class="equation fade-item">
 <strong>e</strong>(t) = <strong>I</strong>(t) - <strong>I</strong>* &nbsp;&nbsp;|&nbsp;&nbsp; <strong>v</strong> = -&lambda; <strong>L</strong><sub>I</sub><sup>+</sup> (<strong>I</strong> - <strong>I</strong>*)
@@ -246,39 +580,39 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 <div class="slide" id="slide-6">
 <div class="slide-content">
 <h2 class="fade-item">Frequency Analysis &amp; Its Limits</h2>
-<p class="desc fade-item" style="margin-bottom:24px">The Fourier Transform provides global frequency content but loses all spatial localization -- critical for non-stationary signals like images.</p>
+<p class="desc fade-item" style="margin-bottom:24px">The Fourier Transform provides global frequency content but loses all spatial localization &mdash; critical for non-stationary signals like images.</p>
 <div class="diagram-box fade-item">
-<div style="display:flex;justify-content:center;gap:50px;align-items:center;flex-wrap:wrap">
+<div style="display:flex;justify-content:center;gap:40px;align-items:center;flex-wrap:wrap">
 <div style="text-align:center">
 <svg width="200" height="120" viewBox="0 0 200 120">
-<text x="100" y="15" fill="#78909c" font-size="10" text-anchor="middle">Time Domain Signal</text>
-<line x1="20" y1="70" x2="180" y2="70" stroke="#37474f" stroke-width="1"/>
-<path d="M20,70 Q40,30 60,70 Q80,110 100,70 Q120,30 140,70 Q160,110 180,70" fill="none" stroke="#00bcd4" stroke-width="2"/>
-<text x="100" y="110" fill="#546e7a" font-size="9" text-anchor="middle">Position information preserved</text>
+<text x="100" y="15" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">Time Domain Signal</text>
+<line x1="20" y1="70" x2="180" y2="70" stroke="#cbd5e1" stroke-width="1"/>
+<path d="M20,70 Q40,30 60,70 Q80,110 100,70 Q120,30 140,70 Q160,110 180,70" fill="none" stroke="#0891b2" stroke-width="2.2"/>
+<text x="100" y="110" fill="#64748b" font-size="9" text-anchor="middle">Position information preserved</text>
 </svg>
 </div>
 <div style="text-align:center">
 <svg width="200" height="120" viewBox="0 0 200 120">
-<text x="100" y="15" fill="#78909c" font-size="10" text-anchor="middle">Fourier Transform</text>
-<line x1="20" y1="90" x2="180" y2="90" stroke="#37474f" stroke-width="1"/>
-<rect x="40" y="50" width="12" height="40" fill="rgba(124,77,255,0.6)" rx="2"/>
-<rect x="70" y="30" width="12" height="60" fill="rgba(124,77,255,0.8)" rx="2"/>
-<rect x="100" y="60" width="12" height="30" fill="rgba(124,77,255,0.5)" rx="2"/>
-<rect x="130" y="45" width="12" height="45" fill="rgba(124,77,255,0.7)" rx="2"/>
-<rect x="160" y="70" width="12" height="20" fill="rgba(124,77,255,0.4)" rx="2"/>
-<text x="100" y="110" fill="#546e7a" font-size="9" text-anchor="middle">Spatial localization LOST</text>
+<text x="100" y="15" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">Fourier Transform</text>
+<line x1="20" y1="90" x2="180" y2="90" stroke="#cbd5e1" stroke-width="1"/>
+<rect x="40" y="50" width="12" height="40" fill="#7c3aed" opacity="0.65" rx="2"/>
+<rect x="70" y="30" width="12" height="60" fill="#7c3aed" opacity="0.85" rx="2"/>
+<rect x="100" y="60" width="12" height="30" fill="#7c3aed" opacity="0.55" rx="2"/>
+<rect x="130" y="45" width="12" height="45" fill="#7c3aed" opacity="0.75" rx="2"/>
+<rect x="160" y="70" width="12" height="20" fill="#7c3aed" opacity="0.45" rx="2"/>
+<text x="100" y="110" fill="#be185d" font-size="9" font-weight="700" text-anchor="middle">Spatial localization LOST</text>
 </svg>
 </div>
 <div style="text-align:center">
 <svg width="200" height="120" viewBox="0 0 200 120">
-<text x="100" y="15" fill="#78909c" font-size="10" text-anchor="middle">Wavelet Transform</text>
-<rect x="20" y="30" width="40" height="30" fill="rgba(0,188,212,0.3)" stroke="#00bcd4" stroke-width="0.5" rx="2"/>
-<rect x="70" y="35" width="40" height="25" fill="rgba(0,188,212,0.5)" stroke="#00bcd4" stroke-width="0.5" rx="2"/>
-<rect x="120" y="25" width="40" height="35" fill="rgba(0,188,212,0.7)" stroke="#00bcd4" stroke-width="0.5" rx="2"/>
-<rect x="20" y="70" width="40" height="20" fill="rgba(124,77,255,0.3)" stroke="#7c4dff" stroke-width="0.5" rx="2"/>
-<rect x="70" y="65" width="40" height="30" fill="rgba(124,77,255,0.5)" stroke="#7c4dff" stroke-width="0.5" rx="2"/>
-<rect x="120" y="68" width="40" height="25" fill="rgba(124,77,255,0.7)" stroke="#7c4dff" stroke-width="0.5" rx="2"/>
-<text x="100" y="110" fill="#546e7a" font-size="9" text-anchor="middle">Time + Frequency preserved</text>
+<text x="100" y="15" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">Wavelet Transform</text>
+<rect x="20" y="30" width="40" height="30" fill="#0891b2" opacity="0.35" stroke="#0891b2" stroke-width="0.8" rx="2"/>
+<rect x="70" y="35" width="40" height="25" fill="#0891b2" opacity="0.55" stroke="#0891b2" stroke-width="0.8" rx="2"/>
+<rect x="120" y="25" width="40" height="35" fill="#0891b2" opacity="0.75" stroke="#0891b2" stroke-width="0.8" rx="2"/>
+<rect x="20" y="70" width="40" height="20" fill="#7c3aed" opacity="0.35" stroke="#7c3aed" stroke-width="0.8" rx="2"/>
+<rect x="70" y="65" width="40" height="30" fill="#7c3aed" opacity="0.55" stroke="#7c3aed" stroke-width="0.8" rx="2"/>
+<rect x="120" y="68" width="40" height="25" fill="#7c3aed" opacity="0.75" stroke="#7c3aed" stroke-width="0.8" rx="2"/>
+<text x="100" y="110" fill="#059669" font-size="9" font-weight="700" text-anchor="middle">Time + Frequency preserved</text>
 </svg>
 </div>
 </div>
@@ -301,14 +635,14 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 </div>
 <div class="glow-card" style="flex:1">
 <h4>CWT</h4>
-<p>Continuous version with redundant representation -- high computational cost, not suitable for real-time</p>
+<p>Continuous version with redundant representation &mdash; high computational cost, not suitable for real-time</p>
 </div>
 <div class="glow-card" style="flex:1.2">
 <h4>LWT (Lifting Wavelet Transform)</h4>
 <p>Spatial optimization via in-place computation. No complex multiplications required for real-time performance</p>
 </div>
 </div>
-<h3 class="fade-item" style="margin-top:30px;color:#00e5ff">Lifting Scheme Architecture</h3>
+<h3 class="fade-item" style="margin-top:30px;color:#0e7490">Lifting Scheme Architecture</h3>
 <div class="diagram-box fade-item">
 <div class="lifting-diagram">
 <div class="lift-step">
@@ -316,18 +650,18 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 <div class="step-desc">x[n]</div>
 </div>
 <div class="arrow-right">&#8594;</div>
-<div class="lift-step" style="border-color:rgba(0,230,118,0.4)">
-<div class="step-title" style="color:#00e676">Split</div>
+<div class="lift-step" style="border-color:rgba(5,150,105,0.4)">
+<div class="step-title" style="color:#059669">Split</div>
 <div class="step-desc">Even/Odd separation<br>x<sub>e</sub>, x<sub>o</sub></div>
 </div>
 <div class="arrow-right">&#8594;</div>
-<div class="lift-step" style="border-color:rgba(255,171,0,0.4)">
-<div class="step-title" style="color:#ffab00">Predict</div>
+<div class="lift-step" style="border-color:rgba(217,119,6,0.4)">
+<div class="step-title" style="color:#d97706">Predict</div>
 <div class="step-desc">d[n] = x<sub>o</sub> - P(x<sub>e</sub>)<br>Detail coefficients</div>
 </div>
 <div class="arrow-right">&#8594;</div>
-<div class="lift-step" style="border-color:rgba(124,77,255,0.4)">
-<div class="step-title" style="color:#b388ff">Update</div>
+<div class="lift-step" style="border-color:rgba(124,58,237,0.4)">
+<div class="step-title" style="color:#7c3aed">Update</div>
 <div class="step-desc">s[n] = x<sub>e</sub> + U(d)<br>Approximation coefficients</div>
 </div>
 <div class="arrow-right">&#8594;</div>
@@ -337,7 +671,7 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 </div>
 </div>
 </div>
-<p class="fade-item" style="font-size:0.95rem;color:#90a4ae;margin-top:15px">LWT advantage: operates in-place with simple additions and shifts -- ideal for embedded real-time systems</p>
+<p class="fade-item" style="font-size:0.95rem;color:#475569;margin-top:15px">LWT advantage: operates in-place with simple additions and shifts &mdash; ideal for embedded real-time systems</p>
 </div>
 </div>
 
@@ -347,28 +681,28 @@ p,.desc{font-size:1.1rem;line-height:1.8;color:#b0bec5;max-width:900px;margin:0 
 <h2 class="fade-item">Mathematical Modeling: DWT-PVS &amp; LWT-PVS</h2>
 <p class="desc fade-item" style="margin-bottom:20px">The photometric error is computed in the wavelet domain, providing robustness to illumination-induced noise.</p>
 <div class="highlight-box fade-item">
-<h3 style="color:#00e5ff;margin-bottom:10px">DWT-PVS Error Formulation</h3>
+<h3 style="color:#0e7490;margin-bottom:10px">DWT-PVS Error Formulation</h3>
 <div class="equation">
 e<sub>w</sub> = W(I(r(t))) - W(I*) = I<sub>w</sub>(t) - I<sub>w</sub>*
 </div>
-<p style="font-size:0.9rem;color:#78909c;margin-top:8px">Where W denotes the wavelet transform operator applied to the image</p>
+<p style="font-size:0.9rem;color:#64748b;margin-top:8px">Where W denotes the wavelet transform operator applied to the image</p>
 </div>
 <div class="highlight-box fade-item">
-<h3 style="color:#b388ff;margin-bottom:10px">LWT-PVS with Energy Normalization</h3>
+<h3 style="color:#7c3aed;margin-bottom:10px">LWT-PVS with Energy Normalization</h3>
 <div class="equation">
 e<sub>lwt</sub> = (1/N<sub>E</sub>) &middot; [L(I(r(t))) - L(I*)]
 </div>
 <div class="equation" style="margin-top:8px">
 N<sub>E</sub> = &radic;(&Sigma; |c<sub>k</sub>|&sup2;) &nbsp;&nbsp; (Energy normalization factor)
 </div>
-<p style="font-size:0.9rem;color:#78909c;margin-top:8px">Energy normalization preserves accuracy while compensating for coefficient magnitude differences between levels</p>
+<p style="font-size:0.9rem;color:#64748b;margin-top:8px">Energy normalization preserves accuracy while compensating for coefficient magnitude differences between levels</p>
 </div>
 <div class="highlight-box fade-item">
-<h3 style="color:#00e676;margin-bottom:10px">Control Law</h3>
+<h3 style="color:#059669;margin-bottom:10px">Control Law</h3>
 <div class="equation">
 v<sub>c</sub> = -&lambda; &middot; L<sub>w</sub><sup>+</sup> &middot; e<sub>w</sub> &nbsp;&nbsp;|&nbsp;&nbsp; L<sub>w</sub> = &part;I<sub>w</sub>/&part;r &middot; L<sub>r</sub>
 </div>
-<p style="font-size:0.9rem;color:#78909c;margin-top:8px">The interaction matrix L<sub>w</sub> relates wavelet coefficient variations to camera velocity</p>
+<p style="font-size:0.9rem;color:#64748b;margin-top:8px">The interaction matrix L<sub>w</sub> relates wavelet coefficient variations to camera velocity</p>
 </div>
 </div>
 </div>
@@ -379,41 +713,41 @@ v<sub>c</sub> = -&lambda; &middot; L<sub>w</sub><sup>+</sup> &middot; e<sub>w</s
 <h2 class="fade-item">Control Loop &amp; Smart Switch Strategy</h2>
 <p class="desc fade-item" style="margin-bottom:16px">Implementation under ViSP framework: 25 FPS, sampling period T<sub>s</sub> = 0.04s</p>
 <div class="diagram-box fade-item">
-<h3 style="color:#78909c;margin-bottom:16px;font-size:0.9rem">Control Loop Block Diagram</h3>
+<h3 style="color:#475569;margin-bottom:16px;font-size:0.9rem;font-weight:700;letter-spacing:1px;text-transform:uppercase">Control Loop Block Diagram</h3>
 <div class="block-diagram">
-<div class="block" style="border-color:rgba(0,230,118,0.4)">I* (Desired<br>Image)</div>
+<div class="block" style="border-color:rgba(5,150,105,0.5);color:#047857">I* (Desired<br>Image)</div>
 <div class="block-arrow">&#8594;</div>
-<div class="block" style="border-color:rgba(255,171,0,0.4)">Wavelet<br>Decomposition<br>(DWT/LWT)</div>
+<div class="block" style="border-color:rgba(217,119,6,0.5);color:#b45309">Wavelet<br>Decomposition<br>(DWT/LWT)</div>
 <div class="block-arrow">&#8594;</div>
-<div class="block" style="border-color:rgba(0,188,212,0.4)">Error<br>Computation<br>e<sub>w</sub></div>
+<div class="block" style="border-color:rgba(8,145,178,0.5);color:#0e7490">Error<br>Computation<br>e<sub>w</sub></div>
 <div class="block-arrow">&#8594;</div>
-<div class="block" style="border-color:rgba(124,77,255,0.4)">Control Law<br>v = -&lambda;L<sup>+</sup>e</div>
+<div class="block" style="border-color:rgba(124,58,237,0.5);color:#6d28d9">Control Law<br>v = -&lambda;L<sup>+</sup>e</div>
 <div class="block-arrow">&#8594;</div>
-<div class="block" style="border-color:rgba(255,82,82,0.4)">Velocity<br>Saturation</div>
+<div class="block" style="border-color:rgba(219,39,119,0.5);color:#be185d">Velocity<br>Saturation</div>
 <div class="block-arrow">&#8594;</div>
-<div class="block" style="border-color:rgba(0,230,118,0.4)">Robot<br>(Camera)</div>
+<div class="block" style="border-color:rgba(5,150,105,0.5);color:#047857">Robot<br>(Camera)</div>
 </div>
-<div style="text-align:center;margin-top:10px;color:#546e7a;font-size:0.8rem">&#8592; Visual feedback loop at 25 FPS &#8592;</div>
+<div style="text-align:center;margin-top:10px;color:#64748b;font-size:0.8rem">&#8592; Visual feedback loop at 25 FPS &#8592;</div>
 </div>
 <div class="highlight-box fade-item">
-<h3 style="color:#ffab00;margin-bottom:12px">Smart Switch: Coarse-to-Fine Strategy</h3>
-<div style="display:flex;gap:20px;align-items:center;justify-content:center;flex-wrap:wrap">
-<div style="text-align:center;padding:12px 20px;background:rgba(0,188,212,0.1);border-radius:8px;border:1px solid rgba(0,188,212,0.3)">
-<div style="color:#00e5ff;font-weight:600;font-size:0.95rem">Phase 1: Coarse</div>
-<div style="color:#78909c;font-size:0.85rem;margin-top:4px">LL sub-band (approximation)</div>
-<div style="color:#546e7a;font-size:0.75rem;margin-top:2px">Large convergence basin</div>
+<h3 style="color:#d97706;margin-bottom:12px">Smart Switch: Coarse-to-Fine Strategy</h3>
+<div style="display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap">
+<div style="text-align:center;padding:14px 22px;background:rgba(8,145,178,0.08);border-radius:10px;border:1px solid rgba(8,145,178,0.3)">
+<div style="color:#0e7490;font-weight:700;font-size:0.95rem">Phase 1: Coarse</div>
+<div style="color:#475569;font-size:0.85rem;margin-top:4px">LL sub-band (approximation)</div>
+<div style="color:#64748b;font-size:0.75rem;margin-top:2px">Large convergence basin</div>
 </div>
-<div style="color:#ffab00;font-size:1.5rem">&#8594;</div>
-<div style="text-align:center;padding:12px 20px;background:rgba(124,77,255,0.1);border-radius:8px;border:1px solid rgba(124,77,255,0.3)">
-<div style="color:#b388ff;font-weight:600;font-size:0.95rem">Switch Trigger</div>
-<div style="color:#78909c;font-size:0.85rem;margin-top:4px">||e<sub>LL</sub>|| &lt; threshold</div>
-<div style="color:#546e7a;font-size:0.75rem;margin-top:2px">Error convergence detected</div>
+<div style="color:#d97706;font-size:1.5rem;font-weight:bold">&#8594;</div>
+<div style="text-align:center;padding:14px 22px;background:rgba(124,58,237,0.08);border-radius:10px;border:1px solid rgba(124,58,237,0.3)">
+<div style="color:#7c3aed;font-weight:700;font-size:0.95rem">Switch Trigger</div>
+<div style="color:#475569;font-size:0.85rem;margin-top:4px">||e<sub>LL</sub>|| &lt; threshold</div>
+<div style="color:#64748b;font-size:0.75rem;margin-top:2px">Error convergence detected</div>
 </div>
-<div style="color:#ffab00;font-size:1.5rem">&#8594;</div>
-<div style="text-align:center;padding:12px 20px;background:rgba(0,230,118,0.1);border-radius:8px;border:1px solid rgba(0,230,118,0.3)">
-<div style="color:#00e676;font-weight:600;font-size:0.95rem">Phase 2: Fine</div>
-<div style="color:#78909c;font-size:0.85rem;margin-top:4px">LH+HL+HH (details)</div>
-<div style="color:#546e7a;font-size:0.75rem;margin-top:2px">High positioning accuracy</div>
+<div style="color:#d97706;font-size:1.5rem;font-weight:bold">&#8594;</div>
+<div style="text-align:center;padding:14px 22px;background:rgba(5,150,105,0.08);border-radius:10px;border:1px solid rgba(5,150,105,0.3)">
+<div style="color:#059669;font-weight:700;font-size:0.95rem">Phase 2: Fine</div>
+<div style="color:#475569;font-size:0.85rem;margin-top:4px">LH+HL+HH (details)</div>
+<div style="color:#64748b;font-size:0.75rem;margin-top:2px">High positioning accuracy</div>
 </div>
 </div>
 </div>
@@ -428,7 +762,7 @@ v<sub>c</sub> = -&lambda; &middot; L<sub>w</sub><sup>+</sup> &middot; e<sub>w</s
 
 <script>
 (function(){
-// Particle background
+// Particle background (light theme: subtle dark dots)
 const canvas=document.getElementById('canvas-bg');
 const ctx=canvas.getContext('2d');
 let particles=[];
@@ -437,18 +771,24 @@ function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerH
 window.addEventListener('resize',resize);
 resize();
 
+const palette=[
+'8,145,178',   // teal
+'124,58,237',  // violet
+'219,39,119'   // pink
+];
+
 function createParticles(){
 particles=[];
-const count=Math.floor((w*h)/12000);
+const count=Math.floor((w*h)/16000);
 for(let i=0;i<count;i++){
 particles.push({
 x:Math.random()*w,
 y:Math.random()*h,
-vx:(Math.random()-0.5)*0.3,
-vy:(Math.random()-0.5)*0.3,
-r:Math.random()*1.5+0.5,
-alpha:Math.random()*0.4+0.1,
-color:Math.random()>0.5?'0,188,212':'124,77,255'
+vx:(Math.random()-0.5)*0.25,
+vy:(Math.random()-0.5)*0.25,
+r:Math.random()*1.4+0.4,
+alpha:Math.random()*0.18+0.05,
+color:palette[Math.floor(Math.random()*palette.length)]
 });
 }
 }
@@ -466,17 +806,17 @@ ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
 ctx.fillStyle='rgba('+p.color+','+p.alpha+')';
 ctx.fill();
 }
-// Draw connections
+// Draw subtle connections
 for(let i=0;i<particles.length;i++){
 for(let j=i+1;j<particles.length;j++){
 const dx=particles[i].x-particles[j].x;
 const dy=particles[i].y-particles[j].y;
 const dist=Math.sqrt(dx*dx+dy*dy);
-if(dist<100){
+if(dist<110){
 ctx.beginPath();
 ctx.moveTo(particles[i].x,particles[i].y);
 ctx.lineTo(particles[j].x,particles[j].y);
-ctx.strokeStyle='rgba(0,188,212,'+(0.05*(1-dist/100))+')';
+ctx.strokeStyle='rgba(124,58,237,'+(0.04*(1-dist/110))+')';
 ctx.lineWidth=0.5;
 ctx.stroke();
 }
