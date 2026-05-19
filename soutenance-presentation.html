@@ -110,7 +110,7 @@ p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0
 <body>
 <canvas id="canvas-bg"></canvas>
 <div id="progress-bar"></div>
-<div id="slide-counter">1 / 9</div>
+<div id="slide-counter">1 / 10</div>
 <div class="nav-hint">&#8592; &#8594; Arrow keys or click to navigate</div>
 
 <!-- SLIDE 1: Title (REDESIGNED) -->
@@ -576,8 +576,44 @@ DEFENSE 2025-2026
 </div>
 </div>
 
-<!-- SLIDE 6: Frequency Analysis & Its Limits -->
+<!-- SLIDE 6: Fourier Transform: Continuous & Discrete -->
 <div class="slide" id="slide-6">
+<div class="slide-content">
+<h2 class="fade-item">Fourier Transform: Continuous &amp; Discrete</h2>
+<p class="desc fade-item" style="margin-bottom:22px"><em>The mathematical foundation for analyzing signals in the frequency domain.</em></p>
+<div class="cards-row fade-item" style="align-items:stretch;margin-top:6px">
+<div class="highlight-box" style="flex:1;min-width:340px;max-width:520px;margin:8px;text-align:left">
+<h3 style="color:#0e7490;margin-bottom:10px;text-align:center">Continuous Fourier Transform (CFT)</h3>
+<div class="equation" style="margin:8px auto;font-size:0.95rem;text-align:center">
+<em>F</em>(&omega;) = &int;<sub>&minus;&infin;</sub><sup>+&infin;</sup> <em>f</em>(<em>t</em>) &middot; <em>e</em><sup>&minus;<em>j&omega;t</em></sup> d<em>t</em>
+</div>
+<div class="equation" style="margin:8px auto;font-size:0.95rem;text-align:center">
+<em>f</em>(<em>t</em>) = (1 / 2&pi;) &middot; &int;<sub>&minus;&infin;</sub><sup>+&infin;</sup> <em>F</em>(&omega;) &middot; <em>e</em><sup><em>j&omega;t</em></sup> d&omega;
+</div>
+<p style="font-size:0.9rem;color:#475569;margin-top:10px;line-height:1.5;text-align:center">Decomposes a continuous signal <em>f</em>(<em>t</em>) into an infinite spectrum of complex sinusoids.</p>
+</div>
+<div class="highlight-box" style="flex:1;min-width:340px;max-width:520px;margin:8px;text-align:left">
+<h3 style="color:#7c3aed;margin-bottom:10px;text-align:center">Discrete Fourier Transform (DFT)</h3>
+<div class="equation" style="margin:8px auto;font-size:0.95rem;text-align:center">
+<em>X</em>[<em>k</em>] = &Sigma;<sub><em>n</em>=0</sub><sup><em>N</em>&minus;1</sup> <em>x</em>[<em>n</em>] &middot; <em>e</em><sup>&minus;<em>j</em>2&pi;<em>kn</em>/<em>N</em></sup>,&nbsp;&nbsp;<em>k</em> = 0,&nbsp;1,&nbsp;&hellip;,&nbsp;<em>N</em>&minus;1
+</div>
+<div class="equation" style="margin:8px auto;font-size:0.95rem;text-align:center">
+<em>x</em>[<em>n</em>] = (1 / <em>N</em>) &middot; &Sigma;<sub><em>k</em>=0</sub><sup><em>N</em>&minus;1</sup> <em>X</em>[<em>k</em>] &middot; <em>e</em><sup><em>j</em>2&pi;<em>kn</em>/<em>N</em></sup>
+</div>
+<p style="font-size:0.9rem;color:#475569;margin-top:10px;line-height:1.5;text-align:center">Sampled version for discrete signals &mdash; used directly on digital images and computed efficiently via the FFT (O(<em>N</em> log <em>N</em>)).</p>
+</div>
+</div>
+<div class="cards-row fade-item" style="margin-top:14px">
+<div class="glow-card" style="max-width:280px"><h4>CFT</h4><p>Continuous <em>t</em> and &omega;, theoretical framework</p></div>
+<div class="glow-card" style="max-width:280px"><h4>DFT</h4><p>Finite samples, practical for digital signal &amp; image processing</p></div>
+<div class="glow-card" style="max-width:280px"><h4>Shared Limitation</h4><p>No spatial-temporal localization of frequency content, motivating the next slide</p></div>
+</div>
+<p class="fade-item" style="font-size:0.85rem;color:#64748b;font-style:italic;margin-top:14px">This limitation motivates the multi-resolution approach introduced next.</p>
+</div>
+</div>
+
+<!-- SLIDE 7: Frequency Analysis & Its Limits -->
+<div class="slide" id="slide-7">
 <div class="slide-content">
 <h2 class="fade-item">Frequency Analysis &amp; Its Limits</h2>
 <p class="desc fade-item" style="margin-bottom:24px">The Fourier Transform provides global frequency content but loses all spatial localization &mdash; critical for non-stationary signals like images.</p>
@@ -624,8 +660,8 @@ DEFENSE 2025-2026
 </div>
 </div>
 
-<!-- SLIDE 7: The Wavelet Solution -->
-<div class="slide" id="slide-7">
+<!-- SLIDE 8: The Wavelet Solution -->
+<div class="slide" id="slide-8">
 <div class="slide-content">
 <h2 class="fade-item">The Wavelet Solution: DWT &amp; LWT</h2>
 <div class="cards-row fade-item">
@@ -675,8 +711,8 @@ DEFENSE 2025-2026
 </div>
 </div>
 
-<!-- SLIDE 8: Mathematical Modeling -->
-<div class="slide" id="slide-8">
+<!-- SLIDE 9: Mathematical Modeling -->
+<div class="slide" id="slide-9">
 <div class="slide-content">
 <h2 class="fade-item">Mathematical Modeling: DWT-PVS &amp; LWT-PVS</h2>
 <p class="desc fade-item" style="margin-bottom:20px">The photometric error is computed in the wavelet domain, providing robustness to illumination-induced noise.</p>
@@ -707,8 +743,8 @@ v<sub>c</sub> = -&lambda; &middot; L<sub>w</sub><sup>+</sup> &middot; e<sub>w</s
 </div>
 </div>
 
-<!-- SLIDE 9: Control Loop & Smart Switch -->
-<div class="slide" id="slide-9">
+<!-- SLIDE 10: Control Loop & Smart Switch -->
+<div class="slide" id="slide-10">
 <div class="slide-content">
 <h2 class="fade-item">Control Loop &amp; Smart Switch Strategy</h2>
 <p class="desc fade-item" style="margin-bottom:16px">Implementation under ViSP framework: 25 FPS, sampling period T<sub>s</sub> = 0.04s</p>
