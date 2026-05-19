@@ -714,31 +714,74 @@ DEFENSE 2025-2026
 <!-- SLIDE 9: Mathematical Modeling -->
 <div class="slide" id="slide-9">
 <div class="slide-content">
-<h2 class="fade-item">Mathematical Modeling: DWT-PVS &amp; LWT-PVS</h2>
-<p class="desc fade-item" style="margin-bottom:20px">The photometric error is computed in the wavelet domain, providing robustness to illumination-induced noise.</p>
-<div class="highlight-box fade-item">
-<h3 style="color:#0e7490;margin-bottom:10px">DWT-PVS Error Formulation</h3>
-<div class="equation">
-e<sub>w</sub> = W(I(r(t))) - W(I*) = I<sub>w</sub>(t) - I<sub>w</sub>*
+<h2 class="fade-item" style="margin-bottom:14px">Mathematical Modeling: DWT-PVS &amp; LWT-PVS</h2>
+<p class="desc fade-item" style="margin-bottom:16px;font-size:1rem">The wavelet domain reformulates the photometric error and interaction matrix, enabling robust and computationally efficient control.</p>
+<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch;justify-content:center">
+
+<!-- LEFT GROUP: DWT-PVS -->
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:18px 20px;margin:0;text-align:left">
+<h3 style="color:#0e7490;margin-bottom:12px;text-align:center;font-size:1.15rem">DWT-PVS</h3>
+
+<div style="margin-bottom:12px">
+<div style="color:#0e7490;font-weight:700;font-size:0.88rem;margin-bottom:4px">A. Wavelet Error</div>
+<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">e<sub>w</sub> = W(I) &minus; W(I*)</div>
+<div style="font-size:0.8rem;color:#64748b">Photometric error computed in the wavelet domain W.</div>
 </div>
-<p style="font-size:0.9rem;color:#64748b;margin-top:8px">Where W denotes the wavelet transform operator applied to the image</p>
+
+<div style="margin-bottom:12px">
+<div style="color:#0e7490;font-weight:700;font-size:0.88rem;margin-bottom:4px">B. Wavelet Interaction Matrix</div>
+<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">L<sub>w</sub> = W &middot; L<sub>I</sub></div>
+<div style="font-size:0.8rem;color:#64748b">Classical interaction matrix transformed into the wavelet domain.</div>
 </div>
-<div class="highlight-box fade-item">
-<h3 style="color:#7c3aed;margin-bottom:10px">LWT-PVS with Energy Normalization</h3>
-<div class="equation">
-e<sub>lwt</sub> = (1/N<sub>E</sub>) &middot; [L(I(r(t))) - L(I*)]
+
+<div>
+<div style="color:#0e7490;font-weight:700;font-size:0.88rem;margin-bottom:4px">C. DWT-PVS Switching Control Law</div>
+<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.88rem;text-align:left">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:2.8em;font-weight:300;line-height:0.9;color:#0e7490">{</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1">
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>w,coarse</sub><sup>+</sup> &middot; e<sub>w,coarse</sub> &nbsp;&nbsp;if&nbsp;||e|| &gt; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Large displacement)</em></div>
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>w,fine</sub><sup>+</sup> &middot; e<sub>w,fine</sub> &nbsp;&nbsp;if&nbsp;||e|| &le; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Near convergence)</em></div>
 </div>
-<div class="equation" style="margin-top:8px">
-N<sub>E</sub> = &radic;(&Sigma; |c<sub>k</sub>|&sup2;) &nbsp;&nbsp; (Energy normalization factor)
 </div>
-<p style="font-size:0.9rem;color:#64748b;margin-top:8px">Energy normalization preserves accuracy while compensating for coefficient magnitude differences between levels</p>
 </div>
-<div class="highlight-box fade-item">
-<h3 style="color:#059669;margin-bottom:10px">Control Law</h3>
-<div class="equation">
-v<sub>c</sub> = -&lambda; &middot; L<sub>w</sub><sup>+</sup> &middot; e<sub>w</sub> &nbsp;&nbsp;|&nbsp;&nbsp; L<sub>w</sub> = &part;I<sub>w</sub>/&part;r &middot; L<sub>r</sub>
+<div style="font-size:0.8rem;color:#64748b;font-style:italic;margin-top:6px">Switches dynamically based on the error threshold &epsilon;.</div>
 </div>
-<p style="font-size:0.9rem;color:#64748b;margin-top:8px">The interaction matrix L<sub>w</sub> relates wavelet coefficient variations to camera velocity</p>
+</div>
+
+<!-- RIGHT GROUP: LWT-PVS -->
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:18px 20px;margin:0;text-align:left">
+<h3 style="color:#7c3aed;margin-bottom:12px;text-align:center;font-size:1.15rem">LWT-PVS</h3>
+
+<div style="margin-bottom:12px">
+<div style="color:#7c3aed;font-weight:700;font-size:0.88rem;margin-bottom:4px">A. LWT Error</div>
+<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">e<sub>LWT</sub> = W<sub>L</sub> &middot; (I &minus; I*)</div>
+<div style="font-size:0.8rem;color:#64748b">Error computed via the Lifting Wavelet Transform W<sub>L</sub>.</div>
+</div>
+
+<div style="margin-bottom:12px">
+<div style="color:#7c3aed;font-weight:700;font-size:0.88rem;margin-bottom:4px">B. LWT Interaction Matrix</div>
+<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">L<sub>LWT</sub> = W<sub>L</sub> &middot; L<sub>I</sub></div>
+<div style="font-size:0.8rem;color:#64748b">Interaction matrix lifted into the LWT domain.</div>
+</div>
+
+<div>
+<div style="color:#7c3aed;font-weight:700;font-size:0.88rem;margin-bottom:4px">C. LWT-PVS Optimal Control Law</div>
+<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.88rem;text-align:left">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:2.8em;font-weight:300;line-height:0.9;color:#7c3aed">{</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1">
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>LWT,coarse</sub><sup>+</sup> &middot; e<sub>LWT,coarse</sub> &nbsp;&nbsp;if&nbsp;||e|| &gt; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Avoids local minima)</em></div>
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>LWT,fine</sub><sup>+</sup> &middot; e<sub>LWT,fine</sub> &nbsp;&nbsp;if&nbsp;||e|| &le; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(High precision)</em></div>
+</div>
+</div>
+</div>
+<div style="margin-top:8px;text-align:center">
+<span style="display:inline-block;background:rgba(5,150,105,0.12);color:#047857;border:1px solid rgba(5,150,105,0.4);border-radius:20px;padding:5px 14px;font-size:0.78rem;font-weight:600">&#10003; Only ONE velocity is computed and sent to the robot at any time t.</span>
+</div>
+</div>
+</div>
+
 </div>
 </div>
 </div>
