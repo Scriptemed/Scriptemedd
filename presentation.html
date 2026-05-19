@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Direct Visual Servoing using Multiscale Decomposition — ESG2E Oran</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-0:#05080F;
+    --bg-1:#0A1020;
+    --bg-2:#0F1830;
+    --ink:#E6F1FF;
+    --ink-dim:#8FA3C7;
+    --cyan:#22D3EE;
+    --cyan-glow:rgba(34,211,238,.45);
+    --orange:#FB923C;
+    --orange-glow:rgba(251,146,60,.45);
+    --violet:#A78BFA;
+    --green:#34D399;
+    --line:rgba(143,163,199,.18);
+    --line-strong:rgba(143,163,199,.35);
+    --grad: linear-gradient(135deg,#22D3EE 0%, #A78BFA 50%, #FB923C 100%);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{
+    height:100%;width:100%;
+    background:var(--bg-0);
+    color:var(--ink);
+    font-family:'Inter','Space Grotesk',system-ui,sans-serif;
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* Animated background */
+  .bg{
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(34,211,238,.12), transparent 60%),
+      radial-gradient(1000px 500px at 110% 110%, rgba(251,146,60,.10), transparent 60%),
+      radial-gradient(800px 400px at 50% 50%, rgba(167,139,250,.08), transparent 60%),
+      var(--bg-0);
+  }
+  .bg::before{
+    content:"";position:absolute;inset:0;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse at center, rgba(0,0,0,.85) 30%, transparent 80%);
+    opacity:.4;
+  }
+  .bg::after{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(2px 2px at 20% 30%, rgba(34,211,238,.6), transparent 50%),
+      radial-gradient(1px 1px at 80% 20%, rgba(255,255,255,.5), transparent 50%),
+      radial-gradient(1.5px 1.5px at 60% 80%, rgba(251,146,60,.6), transparent 50%),
+      radial-gradient(1px 1px at 30% 70%, rgba(167,139,250,.6), transparent 50%),
+      radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,.4), transparent 50%);
+    animation: twinkle 6s ease-in-out infinite alternate;
+  }
+  @keyframes twinkle{ from{opacity:.4} to{opacity:.9} }
+
+  /* Deck */
+  .deck{
+    position:relative;z-index:1;
+    height:100vh;width:100vw;
+    display:flex;align-items:center;justify-content:center;
+    perspective:1800px;
+  }
+  .slide{
+    position:absolute;
+    width:min(1280px, 96vw);
+    height:min(720px, 92vh);
+    border-radius:22px;
+    background: linear-gradient(180deg, rgba(15,24,48,.85), rgba(10,16,32,.92));
+    border:1px solid var(--line-strong);
+    box-shadow:
+      0 30px 80px rgba(0,0,0,.55),
+      inset 0 1px 0 rgba(255,255,255,.05);
+    padding:54px 64px;
+    overflow:hidden;
+    opacity:0;
+    transform: translateY(30px) scale(.98);
+    transition: opacity .55s ease, transform .55s cubic-bezier(.2,.8,.2,1);
+    pointer-events:none;
+  }
+  .slide.active{
+    opacity:1;
+    transform: translateY(0) scale(1);
+    pointer-events:auto;
+  }
+  .slide.exit-left{
+    opacity:0; transform: translateX(-60px) scale(.97);
+  }
+  .slide.exit-right{
+    opacity:0; transform: translateX(60px) scale(.97);
+  }
+
+  /* Slide chrome */
+  .slide::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background: var(--grad);
+    opacity:.85;
+  }
+  .corner-tl, .corner-br{
+    position:absolute;width:46px;height:46px;border:1px solid var(--cyan);
+    opacity:.55;
+  }
+  .corner-tl{top:18px;left:18px;border-right:none;border-bottom:none;border-top-left-radius:6px;}
+  .corner-br{bottom:18px;right:18px;border-left:none;border-top:none;border-bottom-right-radius:6px;border-color:var(--orange);}
+
+  .meta{
+    position:absolute;top:18px;right:24px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    color:var(--ink-dim);letter-spacing:.18em;text-transform:uppercase;
+    display:flex;gap:14px;align-items:center;
+  }
+  .meta .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow);animation:pulse 1.6s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+
+  .footer-id{
+    position:absolute;bottom:20px;left:64px;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;
+    color:var(--ink-dim);letter-spacing:.22em;text-transform:uppercase;
+  }
+  .footer-id .accent{color:var(--cyan)}
+
+  /* Typography */
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    color:var(--cyan);letter-spacing:.3em;text-transform:uppercase;
+    margin-bottom:18px;
+  }
+  .eyebrow .bar{width:32px;height:1px;background:var(--cyan);box-shadow:0 0 8px var(--cyan-glow)}
+  h1.title{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px, 3.6vw, 52px);
+    line-height:1.05;letter-spacing:-.02em;
+    margin-bottom:18px;
+  }
+  h1.title .grad{
+    background:var(--grad);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  h2.section{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:clamp(24px, 2.4vw, 34px);
+    line-height:1.15;letter-spacing:-.01em;
+    margin-bottom:8px;
+  }
+  .lede{
+    color:var(--ink-dim);font-size:15px;max-width:760px;line-height:1.55;
+  }
+
+  /* Slide 1 */
+  .s1{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;}
+  .s1 .school{
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-dim);
+    letter-spacing:.4em;text-transform:uppercase;margin-bottom:30px;
+  }
+  .s1 h1{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;
+    font-size:clamp(34px,4.2vw,64px);line-height:1.02;letter-spacing:-.025em;
+    max-width:1100px;margin:0 auto 18px;
+  }
+  .s1 h1 .ln1{display:block;color:var(--ink)}
+  .s1 h1 .ln2{display:block;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .s1 .tag{
+    color:var(--ink-dim);font-size:15px;max-width:680px;margin:0 auto 36px;line-height:1.55;
+  }
+  .s1 .authors{
+    display:flex;gap:48px;justify-content:center;margin-top:18px;flex-wrap:wrap;
+  }
+  .s1 .author{
+    text-align:center;
+  }
+  .s1 .author .name{
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:18px;color:var(--ink);
+  }
+  .s1 .author .role{
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--cyan);
+    letter-spacing:.25em;text-transform:uppercase;margin-top:4px;
+  }
+  .s1 .badge{
+    display:inline-flex;align-items:center;gap:10px;
+    padding:8px 16px;border-radius:999px;
+    border:1px solid var(--line-strong);background:rgba(34,211,238,.06);
+    font-family:'JetBrains Mono',monospace;font-size:11px;
+    color:var(--cyan);letter-spacing:.25em;text-transform:uppercase;
+    margin-bottom:24px;
+  }
+  .s1 .badge .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 10px var(--cyan-glow)}
+  .s1 .frame{
+    margin-top:42px;
+    display:flex;gap:36px;color:var(--ink-dim);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+  }
+  .s1 .frame span b{color:var(--ink);font-weight:500}
+  .s1 .orbit{
+    position:absolute;width:760px;height:760px;border:1px dashed rgba(34,211,238,.18);border-radius:50%;
+    pointer-events:none;animation: spin 60s linear infinite;
+  }
+  .s1 .orbit2{width:520px;height:520px;border-color:rgba(251,146,60,.18);animation: spin 40s linear infinite reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* Two-col layouts */
+  .grid2{display:grid;grid-template-columns:1.05fr .95fr;gap:36px;align-items:center;height:100%;padding-top:30px}
+  .grid2-r{display:grid;grid-template-columns:.95fr 1.05fr;gap:36px;align-items:center;height:100%;padding-top:30px}
+
+  ul.bullets{list-style:none;display:flex;flex-direction:column;gap:14px;margin-top:14px}
+  ul.bullets li{
+    position:relative;padding-left:30px;font-size:15.5px;line-height:1.55;color:var(--ink);
+  }
+  ul.bullets li::before{
+    content:"";position:absolute;left:0;top:9px;width:14px;height:14px;border-radius:3px;
+    border:1px solid var(--cyan);background:rgba(34,211,238,.15);
+    box-shadow: 0 0 0 1px rgba(34,211,238,.25), 0 0 14px var(--cyan-glow);
+  }
+  ul.bullets li b{color:#fff}
+  ul.bullets li .tag-inline{
+    display:inline-block;padding:2px 8px;border-radius:4px;background:rgba(34,211,238,.1);
+    color:var(--cyan);font-family:'JetBrains Mono',monospace;font-size:11px;margin-left:6px;
+    border:1px solid rgba(34,211,238,.25);
+  }
+  ul.bullets li .warn{
+    color:var(--orange);background:rgba(251,146,60,.1);border-color:rgba(251,146,60,.25);
+  }
+
+  /* Cards */
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:24px}
+  .card{
+    border:1px solid var(--line-strong);border-radius:14px;
+    background:linear-gradient(180deg, rgba(34,211,238,.04), rgba(10,16,32,.4));
+    padding:18px 18px 16px;
+    position:relative;overflow:hidden;
+    transition: transform .3s ease, border-color .3s ease;
+  }
+  .card:hover{transform:translateY(-3px);border-color:rgba(34,211,238,.55)}
+  .card .num{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan);
+    letter-spacing:.25em;text-transform:uppercase;margin-bottom:8px;
+  }
+  .card h3{
+    font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:var(--ink);
+    margin-bottom:6px;line-height:1.25;
+  }
+  .card p{color:var(--ink-dim);font-size:13px;line-height:1.55}
+  .card.orange .num{color:var(--orange)}
+  .card.violet .num{color:var(--violet)}
+  .card.green .num{color:var(--green)}
+  .card::after{
+    content:"";position:absolute;left:0;top:0;width:3px;height:100%;background:var(--cyan);opacity:.7;
+  }
+  .card.orange::after{background:var(--orange)}
+  .card.violet::after{background:var(--violet)}
+  .card.green::after{background:var(--green)}
+
+  /* Math */
+  .math{
+    font-family:'JetBrains Mono',monospace;font-size:15px;
+    background:rgba(34,211,238,.05);
+    border:1px solid rgba(34,211,238,.2);
+    border-radius:10px;padding:14px 18px;color:var(--ink);
+    display:inline-block;margin-top:8px;
+  }
+  .math .v{color:var(--cyan)}
+  .math .op{color:var(--orange)}
+  .math .sub{font-size:11px;vertical-align:sub}
+  .math .sup{font-size:11px;vertical-align:super}
+
+  /* Diagrams */
+  .diagram{
+    width:100%;height:100%;
+    background:
+      radial-gradient(circle at 50% 50%, rgba(34,211,238,.05), transparent 60%);
+    border:1px solid var(--line);border-radius:14px;
+    padding:14px;display:flex;align-items:center;justify-content:center;
+    position:relative;
+  }
+  .diagram::before{
+    content:"DIAGRAM";position:absolute;top:10px;left:14px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-dim);letter-spacing:.3em;
+  }
+
+  /* Approaches comparison (Slide 5) */
+  .approaches{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:18px;
+  }
+  .appbox{
+    border:1px solid var(--line-strong);border-radius:12px;padding:16px;
+    background:rgba(15,24,48,.5);position:relative;overflow:hidden;
+  }
+  .appbox.hl{border-color:rgba(34,211,238,.55);background:linear-gradient(180deg,rgba(34,211,238,.08),rgba(15,24,48,.5))}
+  .appbox h4{
+    font-family:'Space Grotesk',sans-serif;font-size:18px;font-weight:600;color:var(--ink);margin-bottom:6px;
+  }
+  .appbox .sub{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);letter-spacing:.22em;text-transform:uppercase;margin-bottom:10px}
+  .appbox p{font-size:13px;color:var(--ink-dim);line-height:1.5}
+  .appbox .features{margin-top:10px;font-size:12.5px;color:var(--ink)}
+  .appbox.hl .sub{color:var(--cyan)}
+
+  /* Pipeline (Slide 7 LWT) */
+  .pipeline{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:18px;
+  }
+  .pipeline .step{
+    flex:1;text-align:center;padding:14px 8px;border-radius:10px;
+    border:1px solid var(--line-strong);background:rgba(15,24,48,.6);
+    font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:14px;color:var(--ink);
+    position:relative;
+  }
+  .pipeline .step .n{display:block;font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--cyan);letter-spacing:.25em;margin-bottom:4px}
+  .pipeline .arrow{color:var(--cyan);font-size:18px;flex:0 0 auto}
+
+  /* Loop diagram caption */
+  .legend{
+    display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-dim);letter-spacing:.18em;text-transform:uppercase;
+  }
+  .legend i{display:inline-block;width:10px;height:10px;margin-right:6px;vertical-align:middle;border-radius:2px}
+
+  /* Stats strip */
+  .stats{display:flex;gap:24px;margin-top:22px;flex-wrap:wrap}
+  .stat{
+    flex:1;min-width:140px;border:1px solid var(--line-strong);border-radius:12px;padding:14px 16px;
+    background:rgba(15,24,48,.6);
+  }
+  .stat .v{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:26px;color:var(--ink);letter-spacing:-.01em}
+  .stat .v .u{font-size:14px;color:var(--ink-dim);font-weight:500;margin-left:4px}
+  .stat .l{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--cyan);letter-spacing:.22em;text-transform:uppercase;margin-top:4px}
+
+  /* Controls */
+  .controls{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    z-index:50;display:flex;gap:10px;align-items:center;
+    background:rgba(10,16,32,.7);backdrop-filter:blur(12px);
+    border:1px solid var(--line-strong);border-radius:999px;padding:8px 14px;
+  }
+  .ctrl{
+    width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;border:1px solid var(--line-strong);background:transparent;color:var(--ink);
+    cursor:pointer;transition: all .2s ease;
+  }
+  .ctrl:hover{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px var(--cyan-glow)}
+  .counter{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink-dim);
+    letter-spacing:.22em;padding:0 10px;min-width:62px;text-align:center;
+  }
+  .counter b{color:var(--ink);font-weight:600}
+
+  .progress{
+    position:fixed;top:0;left:0;right:0;height:3px;z-index:51;background:transparent;
+  }
+  .progress .bar{
+    height:100%;width:0;background:var(--grad);
+    box-shadow:0 0 12px var(--cyan-glow);
+    transition:width .5s cubic-bezier(.2,.8,.2,1);
+  }
+
+  .hint{
+    position:fixed;bottom:20px;right:20px;z-index:50;
+    font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--ink-dim);
+    letter-spacing:.18em;text-transform:uppercase;
+  }
+  .hint kbd{
+    border:1px solid var(--line-strong);border-radius:4px;padding:2px 6px;
+    background:rgba(15,24,48,.6);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:10px;
+  }
+
+  /* Smaller text */
+  .note{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-dim);
+    letter-spacing:.16em;text-transform:uppercase;margin-top:8px;
+  }
+
+  /* Slide-9 control loop labels */
+  .blk{
+    fill:rgba(15,24,48,.85);stroke:rgba(143,163,199,.4);stroke-width:1;
+  }
+  .blk-hl{stroke:var(--cyan);}
+  .arrow-line{stroke:var(--ink-dim);stroke-width:1.5;fill:none;marker-end:url(#arr)}
+  .arrow-line.hl{stroke:var(--cyan)}
+  .label{fill:var(--ink);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:500}
+  .label-mono{fill:var(--ink-dim);font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.15em}
+
+  /* Wavelet tree (slide 7) */
+  .wt-node{fill:rgba(15,24,48,.85);stroke:var(--cyan);stroke-width:1;}
+  .wt-node.detail{stroke:var(--orange)}
+  .wt-edge{stroke:var(--ink-dim);stroke-width:1;fill:none;opacity:.5}
+  .wt-label{fill:var(--ink);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;text-anchor:middle}
+
+  /* Glow text */
+  .glow{text-shadow:0 0 20px var(--cyan-glow)}
+
+  /* Smart switch indicator */
+  .switch-banner{
+    margin-top:14px;border:1px dashed rgba(251,146,60,.45);border-radius:10px;
+    padding:10px 14px;display:flex;align-items:center;gap:14px;
+    background:rgba(251,146,60,.06);
+  }
+  .switch-banner .icon{
+    width:30px;height:30px;border-radius:50%;border:1px solid var(--orange);
+    display:flex;align-items:center;justify-content:center;color:var(--orange);
+    font-family:'JetBrains Mono',monospace;font-size:14px;
+    box-shadow:0 0 14px var(--orange-glow);
+  }
+  .switch-banner span{font-size:13px;color:var(--ink)}
+  .switch-banner b{color:var(--orange)}
+
+  /* responsive cap */
+  @media (max-height:700px){
+    .slide{padding:38px 50px}
+  }
+</style>
+</head>
+<body>
+<div class="bg"></div>
+
+<div class="progress"><div class="bar" id="progressBar"></div></div>
+
+<div class="deck" id="deck">
+
+  <!-- ============ SLIDE 1 — TITLE ============ -->
+  <section class="slide s1 active" data-slide="1">
+    <div class="orbit"></div>
+    <div class="orbit orbit2"></div>
+    <span class="corner-tl"></span>
+    <span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span> ESG2E ORAN · 2025–2026</div>
+
+    <div class="badge"><span class="dot"></span>Engineering Thesis Defense</div>
+    <div class="school">École Supérieure en Génie Électrique et Énergétique</div>
+
+    <h1>
+      <span class="ln1">Direct Visual Servoing</span>
+      <span class="ln2">using Multiscale Decomposition</span>
+    </h1>
+    <p class="tag">A robust photometric visual servoing framework based on Discrete and Lifting Wavelet Transforms, with a dynamic coarse-to-fine Smart Switch strategy.</p>
+
+    <div class="authors">
+      <div class="author">
+        <div class="name">ABBOU Ahmed Mohammed</div>
+        <div class="role">Author / Candidate</div>
+      </div>
+      <div class="author">
+        <div class="name">KHEROUAA Alaa Eddine</div>
+        <div class="role">Author / Candidate</div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <span><b>DWT-PVS</b> · Discrete Wavelet</span>
+      <span><b>LWT-PVS</b> · Lifting Wavelet</span>
+      <span><b>Smart Switch</b> · Coarse → Fine</span>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 01</span> · TITLE</div>
+  </section>
+
+  <!-- ============ SLIDE 2 — CONTEXT ============ -->
+  <section class="slide" data-slide="2">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 01 · INTRODUCTION</div>
+
+    <div class="grid2">
+      <div>
+        <div class="eyebrow"><span class="bar"></span>General Context</div>
+        <h2 class="section">When robots learn <span style="color:var(--cyan)">to see</span> and <span style="color:var(--orange)">to act</span>.</h2>
+        <p class="lede">Computer vision and visual servoing have become a backbone of modern robotic control — enabling autonomous manipulation, surgical precision, aerial navigation, and inspection in unstructured environments.</p>
+
+        <ul class="bullets">
+          <li><b>Visual servoing</b> closes the loop between camera measurements and robot motion in real time.</li>
+          <li><b>Eye-in-hand configuration</b> — the camera is rigidly mounted on the end-effector, observing the scene from the robot's perspective.</li>
+          <li>Direct interaction between <b>sensor space</b> and <b>actuator space</b> for precise pose convergence.</li>
+        </ul>
+
+        <div class="stats">
+          <div class="stat"><div class="v">6 <span class="u">DoF</span></div><div class="l">Camera Pose</div></div>
+          <div class="stat"><div class="v">25 <span class="u">FPS</span></div><div class="l">Real-Time Loop</div></div>
+          <div class="stat"><div class="v">0.04 <span class="u">s</span></div><div class="l">Sampling Period</div></div>
+        </div>
+      </div>
+
+      <div class="diagram">
+        <!-- Eye-in-hand SVG -->
+        <svg viewBox="0 0 480 440" width="100%" height="100%">
+          <defs>
+            <marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#22D3EE"/>
+            </marker>
+            <linearGradient id="rob" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#1c2a4a"/>
+              <stop offset="1" stop-color="#0a1020"/>
+            </linearGradient>
+          </defs>
+          <!-- Base -->
+          <rect x="180" y="380" width="120" height="20" rx="4" fill="url(#rob)" stroke="#22D3EE" stroke-opacity=".4"/>
+          <text x="240" y="416" text-anchor="middle" class="label-mono">ROBOT BASE</text>
+
+          <!-- Arm link 1 -->
+          <rect x="225" y="240" width="30" height="142" rx="6" fill="url(#rob)" stroke="#22D3EE" stroke-opacity=".5"/>
+          <circle cx="240" cy="240" r="10" fill="#0a1020" stroke="#22D3EE"/>
+          <!-- Arm link 2 -->
+          <rect x="240" y="160" width="120" height="22" rx="6" fill="url(#rob)" stroke="#22D3EE" stroke-opacity=".5" transform="rotate(-22 240 170)"/>
+          <circle cx="350" cy="124" r="9" fill="#0a1020" stroke="#22D3EE"/>
+          <!-- Camera -->
+          <g transform="translate(348,108)">
+            <rect x="-22" y="-14" width="44" height="28" rx="4" fill="#0F1830" stroke="#FB923C" stroke-width="1.5"/>
+            <circle cx="0" cy="0" r="7" fill="#0a1020" stroke="#FB923C"/>
+            <circle cx="0" cy="0" r="3" fill="#FB923C"/>
+            <text x="0" y="-22" text-anchor="middle" class="label-mono" fill="#FB923C">CAMERA</text>
+          </g>
+          <!-- Field of view -->
+          <path d="M348 108 L150 220 L150 280 L348 130 Z" fill="rgba(251,146,60,.10)" stroke="rgba(251,146,60,.4)" stroke-dasharray="3 3"/>
+          <text x="160" y="200" class="label-mono" fill="#FB923C">FOV</text>
+
+          <!-- Target / scene -->
+          <rect x="50" y="240" width="120" height="60" rx="4" fill="rgba(34,211,238,.08)" stroke="#22D3EE"/>
+          <line x1="60" y1="260" x2="160" y2="260" stroke="#22D3EE" stroke-opacity=".6"/>
+          <line x1="60" y1="278" x2="140" y2="278" stroke="#22D3EE" stroke-opacity=".6"/>
+          <line x1="60" y1="290" x2="150" y2="290" stroke="#22D3EE" stroke-opacity=".6"/>
+          <text x="110" y="320" text-anchor="middle" class="label-mono">SCENE / TARGET</text>
+
+          <!-- Loop arrow -->
+          <path d="M 260 90 Q 380 30 410 110" class="arrow-line hl" marker-end="url(#arr2)"/>
+          <text x="396" y="60" class="label-mono" fill="#22D3EE">v(t)</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 02</span> · GENERAL CONTEXT</div>
+  </section>
+
+  <!-- ============ SLIDE 3 — PROBLEM STATEMENT ============ -->
+  <section class="slide" data-slide="3">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 01 · INTRODUCTION</div>
+
+    <div class="eyebrow"><span class="bar"></span>Problem Statement</div>
+    <h2 class="section">Pure photometric servoing breaks under real-world light.</h2>
+    <p class="lede">Photometric Visual Servoing (PVS) uses raw pixel intensities as visual features. Powerful — but fragile when its core assumption is violated.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="num">// limitation 01</div>
+        <h3>Brightness Constancy</h3>
+        <p>PVS strictly assumes that pixel intensities remain constant across views. Reality rarely respects this assumption.</p>
+      </div>
+      <div class="card orange">
+        <div class="num">// limitation 02</div>
+        <h3>Dynamic Illumination</h3>
+        <p>Shadows, moving light sources, exposure changes and reflections rapidly destabilise the control law.</p>
+      </div>
+      <div class="card violet">
+        <div class="num">// limitation 03</div>
+        <h3>Glare Attacks</h3>
+        <p>Localised saturations and specular highlights inject huge errors directly into the cost function.</p>
+      </div>
+    </div>
+
+    <div class="grid2-r" style="padding-top:24px">
+      <div class="diagram" style="height:230px">
+        <!-- Stylized illumination disturbance -->
+        <svg viewBox="0 0 480 220" width="100%" height="100%">
+          <defs>
+            <radialGradient id="glare" cx="50%" cy="50%" r="50%">
+              <stop offset="0" stop-color="#FB923C" stop-opacity=".9"/>
+              <stop offset="1" stop-color="#FB923C" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <rect x="20" y="30" width="200" height="160" rx="8" fill="rgba(34,211,238,.08)" stroke="#22D3EE"/>
+          <text x="120" y="22" text-anchor="middle" class="label-mono" fill="#22D3EE">REFERENCE I*</text>
+          <line x1="40" y1="70" x2="200" y2="70" stroke="#22D3EE" stroke-opacity=".5"/>
+          <line x1="40" y1="100" x2="180" y2="100" stroke="#22D3EE" stroke-opacity=".5"/>
+          <line x1="40" y1="130" x2="190" y2="130" stroke="#22D3EE" stroke-opacity=".5"/>
+          <line x1="40" y1="160" x2="170" y2="160" stroke="#22D3EE" stroke-opacity=".5"/>
+
+          <rect x="260" y="30" width="200" height="160" rx="8" fill="rgba(251,146,60,.08)" stroke="#FB923C"/>
+          <text x="360" y="22" text-anchor="middle" class="label-mono" fill="#FB923C">CURRENT I (DISTURBED)</text>
+          <line x1="280" y1="70" x2="440" y2="70" stroke="#FB923C" stroke-opacity=".5"/>
+          <line x1="280" y1="100" x2="420" y2="100" stroke="#FB923C" stroke-opacity=".5"/>
+          <line x1="280" y1="130" x2="430" y2="130" stroke="#FB923C" stroke-opacity=".5"/>
+          <line x1="280" y1="160" x2="410" y2="160" stroke="#FB923C" stroke-opacity=".5"/>
+          <circle cx="370" cy="110" r="55" fill="url(#glare)"/>
+          <text x="370" y="114" text-anchor="middle" fill="#fff" font-family="JetBrains Mono" font-size="11" font-weight="700">GLARE</text>
+
+          <text x="240" y="115" text-anchor="middle" font-family="Space Grotesk" font-size="22" fill="#A78BFA" font-weight="700">≠</text>
+        </svg>
+      </div>
+      <div>
+        <div class="math">
+          e(t) <span class="op">=</span> I(r(t)) <span class="op">−</span> I<span class="sup">*</span>  &nbsp;&nbsp;<span style="color:var(--ink-dim)">// pixel-level error</span><br>
+          <span style="color:var(--orange)">⚠ assumes</span> ∂I/∂t <span class="op">=</span> 0
+        </div>
+        <p class="lede" style="margin-top:14px">A small illumination drift produces a large, biased photometric error → the control law diverges or oscillates, even when the geometric scene is unchanged.</p>
+      </div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 03</span> · PROBLEM STATEMENT</div>
+  </section>
+
+  <!-- ============ SLIDE 4 — OBJECTIVES ============ -->
+  <section class="slide" data-slide="4">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 01 · INTRODUCTION</div>
+
+    <div class="eyebrow"><span class="bar"></span>Objectives & Contributions</div>
+    <h2 class="section">From a fragile pixel-based law to a <span style="color:var(--cyan)">multiscale, robust controller</span>.</h2>
+    <p class="lede">We separate what the eye <i>sees</i> from how the light <i>changes</i> — by moving the photometric error into the wavelet domain.</p>
+
+    <div class="cards" style="margin-top:30px">
+      <div class="card">
+        <div class="num">// objective 01</div>
+        <h3>Robustness via multiscale decomposition</h3>
+        <p>Decouple low-frequency illumination from high-frequency structural detail using wavelet analysis.</p>
+      </div>
+      <div class="card orange">
+        <div class="num">// contribution 02</div>
+        <h3>DWT-PVS &nbsp;→&nbsp; LWT-PVS</h3>
+        <p>Propose Discrete Wavelet PVS, then a computationally optimised Lifting Wavelet variant for real-time control.</p>
+      </div>
+      <div class="card violet">
+        <div class="num">// contribution 03</div>
+        <h3>Smart Switch · Coarse-to-Fine</h3>
+        <p>A dynamic strategy that starts on global trends (LL) and switches to fine details near convergence.</p>
+      </div>
+    </div>
+
+    <div class="stats" style="margin-top:30px">
+      <div class="stat"><div class="v">+ <span class="u">Robust</span></div><div class="l">vs. illumination drift</div></div>
+      <div class="stat"><div class="v">− <span class="u">Cost</span></div><div class="l">multiplications removed</div></div>
+      <div class="stat"><div class="v">↑ <span class="u">Precision</span></div><div class="l">at fine convergence</div></div>
+      <div class="stat"><div class="v">25 <span class="u">FPS</span></div><div class="l">Real-time on ViSP</div></div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 04</span> · OBJECTIVES & CONTRIBUTIONS</div>
+  </section>
+
+  <!-- ============ SLIDE 5 — VS CONCEPTS ============ -->
+  <section class="slide" data-slide="5">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 02 · THEORETICAL FOUNDATIONS</div>
+
+    <div class="eyebrow"><span class="bar"></span>Visual Servoing Concepts</div>
+    <h2 class="section">Three families · one closed loop.</h2>
+    <p class="lede">Visual servoing schemes differ by the space in which the error is defined — image, pose, or directly the photometric signal itself.</p>
+
+    <div class="approaches">
+      <div class="appbox">
+        <div class="sub">// Approach A</div>
+        <h4>IBVS</h4>
+        <p>Image-Based Visual Servoing — error computed on extracted geometric features (points, lines, moments) in the image plane.</p>
+        <div class="features">+ Robust to calibration · − Needs feature extraction</div>
+      </div>
+      <div class="appbox">
+        <div class="sub">// Approach B</div>
+        <h4>PBVS</h4>
+        <p>Position-Based Visual Servoing — error computed in 3D Cartesian space after estimating the camera pose.</p>
+        <div class="features">+ Geometrically intuitive · − Sensitive to pose estimation noise</div>
+      </div>
+      <div class="appbox hl">
+        <div class="sub">// Direct approach</div>
+        <h4>PVS</h4>
+        <p>Photometric Visual Servoing — uses raw pixel intensities directly. <b>No feature extraction. No matching.</b></p>
+        <div class="features">+ Dense information · − Sensitive to illumination</div>
+      </div>
+    </div>
+
+    <div class="grid2" style="padding-top:30px">
+      <div>
+        <div class="math">
+          IBVS: e <span class="op">=</span> s(I) <span class="op">−</span> s*<br>
+          PBVS: e <span class="op">=</span> [t, θu]<br>
+          <span style="color:var(--cyan)">PVS: e <span class="op">=</span> I <span class="op">−</span> I*</span>
+        </div>
+        <div class="note">our framework targets the direct PVS family</div>
+      </div>
+      <div class="diagram" style="height:230px">
+        <svg viewBox="0 0 480 220" width="100%" height="100%">
+          <defs>
+            <marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L10,5 L0,10 z" fill="#22D3EE"/>
+            </marker>
+          </defs>
+          <!-- generic VS loop -->
+          <rect x="20" y="80" width="80" height="50" rx="6" class="blk"/>
+          <text x="60" y="110" text-anchor="middle" class="label">s* / I*</text>
+          <rect x="160" y="80" width="80" height="50" rx="6" class="blk blk-hl"/>
+          <text x="200" y="110" text-anchor="middle" class="label">Error e</text>
+          <rect x="290" y="80" width="80" height="50" rx="6" class="blk"/>
+          <text x="330" y="110" text-anchor="middle" class="label">Controller</text>
+          <rect x="290" y="20" width="80" height="40" rx="6" class="blk"/>
+          <text x="330" y="44" text-anchor="middle" class="label">Robot</text>
+          <rect x="290" y="150" width="80" height="40" rx="6" class="blk"/>
+          <text x="330" y="174" text-anchor="middle" class="label">Camera</text>
+
+          <path d="M100 105 L160 105" class="arrow-line hl" marker-end="url(#arr3)"/>
+          <path d="M240 105 L290 105" class="arrow-line hl" marker-end="url(#arr3)"/>
+          <path d="M330 80 L330 60" class="arrow-line" marker-end="url(#arr3)"/>
+          <path d="M330 130 L330 150" class="arrow-line" marker-end="url(#arr3)"/>
+          <path d="M290 170 L60 170 L60 130" class="arrow-line" marker-end="url(#arr3)"/>
+          <text x="170" y="166" class="label-mono">s(I)</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 05</span> · VS CONCEPTS</div>
+  </section>
+
+  <!-- ============ SLIDE 6 — FREQUENCY ANALYSIS ============ -->
+  <section class="slide" data-slide="6">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 02 · THEORETICAL FOUNDATIONS</div>
+
+    <div class="eyebrow"><span class="bar"></span>Frequency Analysis & its Limits</div>
+    <h2 class="section">Fourier knows <span style="color:var(--cyan)">what</span> — but not <span style="color:var(--orange)">where</span>.</h2>
+    <p class="lede">The Fourier transform decomposes a signal globally, losing the spatial location of its frequency components — a critical issue for non-stationary signals like images.</p>
+
+    <div class="grid2" style="padding-top:24px">
+      <div>
+        <div class="math">
+          F(ω) <span class="op">=</span> ∫ f(x) · e<span class="sup">−jωx</span> dx
+        </div>
+        <ul class="bullets" style="margin-top:18px">
+          <li><b>Global basis</b> — every Fourier coefficient depends on the entire signal.</li>
+          <li><b>No spatial localization</b> — a sharp edge "smears" across the frequency spectrum.</li>
+          <li><b>Non-stationarity</b> — natural images are full of local discontinuities (contours, textures).</li>
+          <li><b>STFT</b> partially helps but suffers from a fixed window size <span class="tag-inline">Heisenberg trade-off</span></li>
+        </ul>
+        <div class="note">→ we need a basis that is both frequency-aware and spatially localized.</div>
+      </div>
+
+      <div class="diagram" style="height:380px">
+        <svg viewBox="0 0 460 380" width="100%" height="100%">
+          <!-- A signal with localized burst -->
+          <text x="230" y="20" text-anchor="middle" class="label-mono">SPATIAL DOMAIN — f(x)</text>
+          <line x1="20" y1="80" x2="440" y2="80" stroke="rgba(143,163,199,.3)"/>
+          <path d="M20 80 Q 60 80 80 80 T 160 80
+                   Q 180 80 200 50 T 240 110 T 280 80
+                   Q 320 80 360 80 T 440 80" stroke="#22D3EE" fill="none" stroke-width="2"/>
+          <text x="220" y="38" class="label-mono" fill="#FB923C">localised event</text>
+          <line x1="220" y1="44" x2="220" y2="60" stroke="#FB923C" stroke-dasharray="2 2"/>
+
+          <text x="230" y="170" text-anchor="middle" class="label-mono">FREQUENCY DOMAIN — F(ω)</text>
+          <line x1="20" y1="280" x2="440" y2="280" stroke="rgba(143,163,199,.3)"/>
+          <line x1="40" y1="280" x2="40" y2="200" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="80" y1="280" x2="80" y2="220" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="120" y1="280" x2="120" y2="240" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="160" y1="280" x2="160" y2="250" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="200" y1="280" x2="200" y2="245" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="240" y1="280" x2="240" y2="255" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="280" y1="280" x2="280" y2="260" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="320" y1="280" x2="320" y2="265" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="360" y1="280" x2="360" y2="270" stroke="#22D3EE" stroke-width="2"/>
+          <line x1="400" y1="280" x2="400" y2="272" stroke="#22D3EE" stroke-width="2"/>
+          <text x="230" y="310" text-anchor="middle" class="label-mono" fill="#FB923C">where did the event happen ?</text>
+          <text x="230" y="335" text-anchor="middle" font-family="Space Grotesk" font-size="14" fill="#A78BFA" font-weight="600">spatial information lost</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 06</span> · FREQUENCY ANALYSIS</div>
+  </section>
+
+  <!-- ============ SLIDE 7 — WAVELETS ============ -->
+  <section class="slide" data-slide="7">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 02 · THEORETICAL FOUNDATIONS</div>
+
+    <div class="eyebrow"><span class="bar"></span>The Wavelet Solution · DWT · CWT · LWT</div>
+    <h2 class="section">A localised, multiscale lens on the image.</h2>
+
+    <div class="grid2" style="padding-top:18px">
+      <div>
+        <ul class="bullets">
+          <li><b>CWT</b> · Continuous Wavelet Transform — analyses every scale and position; mathematically rich, redundant.</li>
+          <li><b>DWT</b> · Discrete Wavelet Transform — separates each level into <b>LL</b> (illumination trends) and <b>LH/HL/HH</b> (structural detail). <span class="tag-inline">image filter banks</span></li>
+          <li><b>LWT</b> · Lifting Wavelet Transform — a spatial-domain reformulation: <span class="tag-inline">Split → Predict → Update</span></li>
+          <li><b>No complex multiplications</b> · in-place computation · ideal for <b>real-time control</b>. <span class="tag-inline warn">2× faster typical</span></li>
+        </ul>
+
+        <div class="pipeline">
+          <div class="step"><span class="n">// step 01</span>SPLIT</div>
+          <div class="arrow">→</div>
+          <div class="step"><span class="n">// step 02</span>PREDICT</div>
+          <div class="arrow">→</div>
+          <div class="step"><span class="n">// step 03</span>UPDATE</div>
+        </div>
+      </div>
+
+      <div class="diagram" style="height:430px">
+        <!-- DWT decomposition tree -->
+        <svg viewBox="0 0 460 430" width="100%" height="100%">
+          <text x="230" y="20" text-anchor="middle" class="label-mono">DWT 2-LEVEL DECOMPOSITION</text>
+
+          <!-- Level 1 -->
+          <rect x="10" y="50" width="200" height="160" rx="4" fill="rgba(34,211,238,.06)" stroke="#22D3EE"/>
+          <line x1="110" y1="50" x2="110" y2="210" stroke="#22D3EE" stroke-opacity=".5"/>
+          <line x1="10" y1="130" x2="210" y2="130" stroke="#22D3EE" stroke-opacity=".5"/>
+          <text x="60" y="95" text-anchor="middle" class="wt-label">LL</text>
+          <text x="160" y="95" text-anchor="middle" class="wt-label" fill="#FB923C">HL</text>
+          <text x="60" y="175" text-anchor="middle" class="wt-label" fill="#FB923C">LH</text>
+          <text x="160" y="175" text-anchor="middle" class="wt-label" fill="#FB923C">HH</text>
+
+          <!-- Arrow -->
+          <path d="M 220 130 L 260 130" stroke="#22D3EE" stroke-width="2" fill="none" marker-end="url(#arr3)"/>
+          <text x="240" y="120" text-anchor="middle" class="label-mono" fill="#22D3EE">recurse on LL</text>
+
+          <!-- Level 2 (zoomed LL) -->
+          <rect x="270" y="50" width="180" height="160" rx="4" fill="rgba(34,211,238,.10)" stroke="#22D3EE"/>
+          <line x1="360" y1="50" x2="360" y2="210" stroke="#22D3EE" stroke-opacity=".5"/>
+          <line x1="270" y1="130" x2="450" y2="130" stroke="#22D3EE" stroke-opacity=".5"/>
+          <text x="315" y="95" text-anchor="middle" class="wt-label">LL₂</text>
+          <text x="405" y="95" text-anchor="middle" class="wt-label" fill="#FB923C">HL₂</text>
+          <text x="315" y="175" text-anchor="middle" class="wt-label" fill="#FB923C">LH₂</text>
+          <text x="405" y="175" text-anchor="middle" class="wt-label" fill="#FB923C">HH₂</text>
+
+          <text x="230" y="245" text-anchor="middle" class="label-mono">SEPARATION OF CONCERNS</text>
+          <rect x="40" y="265" width="180" height="40" rx="6" fill="rgba(34,211,238,.08)" stroke="#22D3EE"/>
+          <text x="130" y="282" text-anchor="middle" class="label">LL → Illumination</text>
+          <text x="130" y="298" text-anchor="middle" class="label-mono">low-frequency trends</text>
+          <rect x="240" y="265" width="180" height="40" rx="6" fill="rgba(251,146,60,.08)" stroke="#FB923C"/>
+          <text x="330" y="282" text-anchor="middle" class="label">LH/HL/HH → Structure</text>
+          <text x="330" y="298" text-anchor="middle" class="label-mono">contours · textures</text>
+
+          <text x="230" y="340" text-anchor="middle" class="label-mono">LWT REORDERING</text>
+          <rect x="40" y="355" width="60" height="40" rx="6" fill="rgba(167,139,250,.08)" stroke="#A78BFA"/>
+          <text x="70" y="380" text-anchor="middle" class="label">SPLIT</text>
+          <path d="M105 375 L135 375" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <rect x="140" y="355" width="80" height="40" rx="6" fill="rgba(167,139,250,.08)" stroke="#A78BFA"/>
+          <text x="180" y="380" text-anchor="middle" class="label">PREDICT</text>
+          <path d="M225 375 L255 375" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <rect x="260" y="355" width="80" height="40" rx="6" fill="rgba(167,139,250,.08)" stroke="#A78BFA"/>
+          <text x="300" y="380" text-anchor="middle" class="label">UPDATE</text>
+          <path d="M345 375 L375 375" stroke="#A78BFA" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <rect x="380" y="355" width="60" height="40" rx="6" fill="rgba(52,211,153,.08)" stroke="#34D399"/>
+          <text x="410" y="380" text-anchor="middle" class="label">α / d</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 07</span> · WAVELETS DWT · LWT</div>
+  </section>
+
+  <!-- ============ SLIDE 8 — MATHEMATICAL MODELING ============ -->
+  <section class="slide" data-slide="8">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 03 · PROPOSED APPROACH</div>
+
+    <div class="eyebrow"><span class="bar"></span>Mathematical Modeling · DWT-PVS & LWT-PVS</div>
+    <h2 class="section">The error <span style="color:var(--cyan)">migrates</span> from pixels to wavelet coefficients.</h2>
+    <p class="lede">Instead of comparing raw intensities, we compare wavelet coefficients — naturally separating illumination from structure.</p>
+
+    <div class="grid2" style="padding-top:24px">
+      <div>
+        <h3 style="font-family:'Space Grotesk';font-size:18px;color:var(--cyan);margin-bottom:8px;letter-spacing:.05em">DWT-PVS · photometric error in wavelet domain</h3>
+        <div class="math">
+          e<span class="sub">DWT</span>(t) <span class="op">=</span> W{I(r(t))} <span class="op">−</span> W{I<span class="sup">*</span>}
+        </div>
+        <div class="math" style="margin-top:8px">
+          ė <span class="op">=</span> L<span class="sub">W</span> · v &nbsp;<span style="color:var(--ink-dim)">// wavelet interaction matrix</span><br>
+          v <span class="op">=</span> <span class="op">−</span>λ · L<span class="sub">W</span><span class="sup">+</span> · e<span class="sub">DWT</span>
+        </div>
+
+        <h3 style="font-family:'Space Grotesk';font-size:18px;color:var(--orange);margin:18px 0 8px;letter-spacing:.05em">LWT-PVS · energy-normalised lifting variant</h3>
+        <div class="math">
+          e<span class="sub">LWT</span> <span class="op">=</span> κ · ( L{I} <span class="op">−</span> L{I<span class="sup">*</span>} )<br>
+          <span style="color:var(--orange)">κ</span> <span class="op">=</span> energy normalisation factor
+        </div>
+        <div class="note">κ preserves the photometric precision lost by the lifting reordering.</div>
+      </div>
+
+      <div>
+        <div class="diagram" style="height:280px">
+          <svg viewBox="0 0 460 280" width="100%" height="100%">
+            <text x="230" y="22" text-anchor="middle" class="label-mono">ERROR CONSTRUCTION</text>
+
+            <!-- I -->
+            <rect x="20" y="50" width="80" height="60" rx="6" class="blk"/>
+            <text x="60" y="85" text-anchor="middle" class="label">I(r(t))</text>
+            <!-- I* -->
+            <rect x="20" y="170" width="80" height="60" rx="6" class="blk"/>
+            <text x="60" y="205" text-anchor="middle" class="label">I*</text>
+
+            <!-- W -->
+            <rect x="160" y="50" width="100" height="60" rx="6" class="blk blk-hl"/>
+            <text x="210" y="78" text-anchor="middle" class="label">Wavelet</text>
+            <text x="210" y="96" text-anchor="middle" class="label-mono" fill="#22D3EE">DWT / LWT</text>
+            <rect x="160" y="170" width="100" height="60" rx="6" class="blk blk-hl"/>
+            <text x="210" y="198" text-anchor="middle" class="label">Wavelet</text>
+            <text x="210" y="216" text-anchor="middle" class="label-mono" fill="#22D3EE">DWT / LWT</text>
+
+            <!-- − -->
+            <circle cx="330" cy="140" r="20" fill="rgba(251,146,60,.1)" stroke="#FB923C"/>
+            <text x="330" y="146" text-anchor="middle" font-family="Space Grotesk" font-size="20" fill="#FB923C" font-weight="700">−</text>
+
+            <!-- e -->
+            <rect x="380" y="110" width="70" height="60" rx="6" class="blk" stroke="#FB923C"/>
+            <text x="415" y="138" text-anchor="middle" class="label">e</text>
+            <text x="415" y="156" text-anchor="middle" class="label-mono" fill="#FB923C">DWT/LWT</text>
+
+            <path d="M100 80 L160 80" class="arrow-line hl" marker-end="url(#arr3)"/>
+            <path d="M100 200 L160 200" class="arrow-line hl" marker-end="url(#arr3)"/>
+            <path d="M260 80 L310 130" class="arrow-line hl" marker-end="url(#arr3)"/>
+            <path d="M260 200 L310 150" class="arrow-line hl" marker-end="url(#arr3)"/>
+            <path d="M350 140 L380 140" class="arrow-line hl" marker-end="url(#arr3)"/>
+          </svg>
+        </div>
+        <div class="switch-banner">
+          <div class="icon">κ</div>
+          <span><b>LWT specificity</b> · the energy normalisation factor compensates for the non-orthonormal lifting steps and restores precision parity with the DWT version.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 08</span> · MATHEMATICAL MODELING</div>
+  </section>
+
+  <!-- ============ SLIDE 9 — CONTROL LOOP & SMART SWITCH ============ -->
+  <section class="slide" data-slide="9">
+    <span class="corner-tl"></span><span class="corner-br"></span>
+    <div class="meta"><span class="dot"></span>SECTION 03 · PROPOSED APPROACH</div>
+
+    <div class="eyebrow"><span class="bar"></span>Control Loop Architecture · Smart Switch</div>
+    <h2 class="section">A coarse-to-fine control loop running at <span style="color:var(--cyan)">25 FPS</span>.</h2>
+
+    <div class="diagram" style="height:330px;margin-top:14px">
+      <svg viewBox="0 0 1100 320" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#22D3EE"/>
+          </marker>
+          <marker id="arrG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#FB923C"/>
+          </marker>
+        </defs>
+
+        <text x="20" y="22" class="label-mono">CONTROL LOOP — VISP · 25 FPS · Ts = 0.04 s</text>
+
+        <!-- Reference I* -->
+        <rect x="30" y="60" width="120" height="50" rx="8" class="blk"/>
+        <text x="90" y="92" text-anchor="middle" class="label">Reference I*</text>
+
+        <!-- Wavelet ref -->
+        <rect x="30" y="170" width="120" height="50" rx="8" class="blk blk-hl"/>
+        <text x="90" y="195" text-anchor="middle" class="label">Wavelet</text>
+        <text x="90" y="212" text-anchor="middle" class="label-mono" fill="#22D3EE">W(I*)</text>
+
+        <!-- Error -->
+        <circle cx="240" cy="195" r="22" fill="rgba(251,146,60,.1)" stroke="#FB923C"/>
+        <text x="240" y="201" text-anchor="middle" font-family="Space Grotesk" font-size="22" fill="#FB923C" font-weight="700">−</text>
+        <text x="240" y="240" text-anchor="middle" class="label-mono" fill="#FB923C">e(t)</text>
+
+        <!-- Smart Switch -->
+        <rect x="300" y="170" width="160" height="50" rx="8" class="blk blk-hl"/>
+        <text x="380" y="192" text-anchor="middle" class="label">Smart Switch</text>
+        <text x="380" y="210" text-anchor="middle" class="label-mono" fill="#22D3EE">LL ⇄ LH/HL/HH</text>
+
+        <!-- Controller -->
+        <rect x="510" y="170" width="160" height="50" rx="8" class="blk"/>
+        <text x="590" y="192" text-anchor="middle" class="label">Control Law</text>
+        <text x="590" y="210" text-anchor="middle" class="label-mono">v = −λ L⁺ e</text>
+
+        <!-- Saturation -->
+        <rect x="710" y="170" width="120" height="50" rx="8" class="blk"/>
+        <text x="770" y="192" text-anchor="middle" class="label">Saturation</text>
+        <text x="770" y="210" text-anchor="middle" class="label-mono" fill="#FB923C">|v| ≤ vmax</text>
+
+        <!-- Robot -->
+        <rect x="880" y="170" width="100" height="50" rx="8" class="blk"/>
+        <text x="930" y="200" text-anchor="middle" class="label">Robot</text>
+
+        <!-- Camera -->
+        <rect x="880" y="60" width="100" height="50" rx="8" class="blk"/>
+        <text x="930" y="90" text-anchor="middle" class="label">Camera</text>
+
+        <!-- Wavelet current -->
+        <rect x="710" y="60" width="120" height="50" rx="8" class="blk blk-hl"/>
+        <text x="770" y="80" text-anchor="middle" class="label">Wavelet</text>
+        <text x="770" y="98" text-anchor="middle" class="label-mono" fill="#22D3EE">W(I(t))</text>
+
+        <!-- arrows -->
+        <path d="M90 110 L90 170" class="arrow-line hl" marker-end="url(#arr)"/>
+        <path d="M150 195 L218 195" class="arrow-line hl" marker-end="url(#arr)"/>
+        <path d="M262 195 L300 195" class="arrow-line" marker-end="url(#arr)"/>
+        <path d="M460 195 L510 195" class="arrow-line hl" marker-end="url(#arr)"/>
+        <path d="M670 195 L710 195" class="arrow-line" marker-end="url(#arr)"/>
+        <path d="M830 195 L880 195" class="arrow-line" marker-end="url(#arr)"/>
+
+        <!-- feedback path top -->
+        <path d="M930 170 L930 110" class="arrow-line" marker-end="url(#arr)"/>
+        <path d="M880 85 L830 85" class="arrow-line hl" marker-end="url(#arr)"/>
+        <path d="M710 85 L240 85 L240 173" class="arrow-line" marker-end="url(#arrG)" stroke="#FB923C"/>
+
+        <text x="450" y="78" class="label-mono" fill="#FB923C">photometric feedback</text>
+      </svg>
+    </div>
+
+    <div class="grid2" style="padding-top:14px">
+      <div>
+        <div class="switch-banner">
+          <div class="icon">⇄</div>
+          <span><b>Smart Switch</b> · operates first on the <b>LL coarse approximation</b> for a globally robust trajectory, then dynamically switches to the <b>high-frequency details</b> for fine convergence and sub-pixel precision.</span>
+        </div>
+        <div class="legend" style="margin-top:14px">
+          <span><i style="background:#22D3EE"></i>Wavelet path</span>
+          <span><i style="background:#FB923C"></i>Error / feedback</span>
+          <span><i style="background:#A78BFA"></i>Smart-switch logic</span>
+        </div>
+      </div>
+      <div>
+        <div class="stats">
+          <div class="stat"><div class="v">25 <span class="u">FPS</span></div><div class="l">ViSP loop rate</div></div>
+          <div class="stat"><div class="v">0.04 <span class="u">s</span></div><div class="l">Sampling Ts</div></div>
+          <div class="stat"><div class="v">|v| ≤ <span class="u">v<sub>max</sub></span></div><div class="l">Safety saturation</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-id"><span class="accent">// 09</span> · CONTROL ARCHITECTURE & SMART SWITCH</div>
+  </section>
+
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <button class="ctrl" id="prev" aria-label="Previous">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <div class="counter"><b id="cur">01</b> / <span id="tot">09</span></div>
+  <button class="ctrl" id="next" aria-label="Next">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <button class="ctrl" id="full" aria-label="Fullscreen" title="Fullscreen">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/></svg>
+  </button>
+</div>
+
+<div class="hint">
+  <kbd>←</kbd> <kbd>→</kbd> navigate · <kbd>F</kbd> fullscreen · <kbd>Home</kbd> first
+</div>
+
+<script>
+(function(){
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total  = slides.length;
+  const cur = document.getElementById('cur');
+  const tot = document.getElementById('tot');
+  const bar = document.getElementById('progressBar');
+  let idx = 0;
+
+  tot.textContent = String(total).padStart(2,'0');
+
+  function go(n, dir){
+    if(n < 0 || n >= total || n === idx) return;
+    const oldEl = slides[idx];
+    const newEl = slides[n];
+    oldEl.classList.remove('active');
+    oldEl.classList.add(dir === 'next' ? 'exit-left' : 'exit-right');
+    setTimeout(()=>{ oldEl.classList.remove('exit-left','exit-right'); }, 600);
+    newEl.classList.add('active');
+    idx = n;
+    cur.textContent = String(idx+1).padStart(2,'0');
+    bar.style.width = (((idx+1)/total)*100) + '%';
+  }
+  function next(){ go(idx+1,'next'); }
+  function prev(){ go(idx-1,'prev'); }
+
+  document.getElementById('next').addEventListener('click', next);
+  document.getElementById('prev').addEventListener('click', prev);
+  document.getElementById('full').addEventListener('click', toggleFs);
+
+  function toggleFs(){
+    if(!document.fullscreenElement){ document.documentElement.requestFullscreen?.(); }
+    else { document.exitFullscreen?.(); }
+  }
+
+  document.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowRight' || e.key===' ' || e.key==='PageDown') { e.preventDefault(); next(); }
+    else if(e.key==='ArrowLeft' || e.key==='PageUp') { e.preventDefault(); prev(); }
+    else if(e.key==='Home') { go(0, 'prev'); }
+    else if(e.key==='End') { go(total-1, 'next'); }
+    else if(e.key==='f' || e.key==='F') { toggleFs(); }
+  });
+
+  // Init progress
+  bar.style.width = ((1/total)*100)+'%';
+})();
+</script>
+</body>
+</html>
