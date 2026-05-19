@@ -711,89 +711,15 @@ DEFENSE 2025-2026
 </div>
 </div>
 
-<!-- SLIDE 9: Mathematical Modeling -->
+<!-- SLIDE 9: Mathematical Modeling and Control Loop -->
 <div class="slide" id="slide-9">
 <div class="slide-content">
-<h2 class="fade-item" style="margin-bottom:14px">Mathematical Modeling: DWT-PVS &amp; LWT-PVS</h2>
-<p class="desc fade-item" style="margin-bottom:16px;font-size:1rem">The wavelet domain reformulates the photometric error and interaction matrix, enabling robust and computationally efficient control.</p>
-<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch;justify-content:center">
+<h2 class="fade-item" style="margin-bottom:10px">Mathematical Modeling and Control Loop</h2>
+<p class="desc fade-item" style="margin-bottom:14px;font-size:0.95rem">From the wavelet-based error formulation to the closed-loop implementation under the ViSP framework (25 FPS, sampling period T<sub>s</sub> = 0.04s).</p>
 
-<!-- LEFT GROUP: DWT-PVS -->
-<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:18px 20px;margin:0;text-align:left">
-<h3 style="color:#0e7490;margin-bottom:12px;text-align:center;font-size:1.15rem">DWT-PVS</h3>
-
-<div style="margin-bottom:12px">
-<div style="color:#0e7490;font-weight:700;font-size:0.88rem;margin-bottom:4px">A. Wavelet Error</div>
-<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">e<sub>w</sub> = W(I) &minus; W(I*)</div>
-<div style="font-size:0.8rem;color:#64748b">Photometric error computed in the wavelet domain W.</div>
-</div>
-
-<div style="margin-bottom:12px">
-<div style="color:#0e7490;font-weight:700;font-size:0.88rem;margin-bottom:4px">B. Wavelet Interaction Matrix</div>
-<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">L<sub>w</sub> = W &middot; L<sub>I</sub></div>
-<div style="font-size:0.8rem;color:#64748b">Classical interaction matrix transformed into the wavelet domain.</div>
-</div>
-
-<div>
-<div style="color:#0e7490;font-weight:700;font-size:0.88rem;margin-bottom:4px">C. DWT-PVS Switching Control Law</div>
-<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.88rem;text-align:left">
-<div style="display:flex;align-items:center;gap:10px">
-<div style="font-size:2.8em;font-weight:300;line-height:0.9;color:#0e7490">{</div>
-<div style="display:flex;flex-direction:column;gap:6px;flex:1">
-<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>w,coarse</sub><sup>+</sup> &middot; e<sub>w,coarse</sub> &nbsp;&nbsp;if&nbsp;||e|| &gt; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Large displacement)</em></div>
-<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>w,fine</sub><sup>+</sup> &middot; e<sub>w,fine</sub> &nbsp;&nbsp;if&nbsp;||e|| &le; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Near convergence)</em></div>
-</div>
-</div>
-</div>
-<div style="font-size:0.8rem;color:#64748b;font-style:italic;margin-top:6px">Switches dynamically based on the error threshold &epsilon;.</div>
-</div>
-</div>
-
-<!-- RIGHT GROUP: LWT-PVS -->
-<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:18px 20px;margin:0;text-align:left">
-<h3 style="color:#7c3aed;margin-bottom:12px;text-align:center;font-size:1.15rem">LWT-PVS</h3>
-
-<div style="margin-bottom:12px">
-<div style="color:#7c3aed;font-weight:700;font-size:0.88rem;margin-bottom:4px">A. LWT Error</div>
-<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">e<sub>LWT</sub> = W<sub>L</sub> &middot; (I &minus; I*)</div>
-<div style="font-size:0.8rem;color:#64748b">Error computed via the Lifting Wavelet Transform W<sub>L</sub>.</div>
-</div>
-
-<div style="margin-bottom:12px">
-<div style="color:#7c3aed;font-weight:700;font-size:0.88rem;margin-bottom:4px">B. LWT Interaction Matrix</div>
-<div class="equation" style="margin:4px 0;padding:8px 14px;font-size:0.95rem;text-align:center">L<sub>LWT</sub> = W<sub>L</sub> &middot; L<sub>I</sub></div>
-<div style="font-size:0.8rem;color:#64748b">Interaction matrix lifted into the LWT domain.</div>
-</div>
-
-<div>
-<div style="color:#7c3aed;font-weight:700;font-size:0.88rem;margin-bottom:4px">C. LWT-PVS Optimal Control Law</div>
-<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.88rem;text-align:left">
-<div style="display:flex;align-items:center;gap:10px">
-<div style="font-size:2.8em;font-weight:300;line-height:0.9;color:#7c3aed">{</div>
-<div style="display:flex;flex-direction:column;gap:6px;flex:1">
-<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>LWT,coarse</sub><sup>+</sup> &middot; e<sub>LWT,coarse</sub> &nbsp;&nbsp;if&nbsp;||e|| &gt; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Avoids local minima)</em></div>
-<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>LWT,fine</sub><sup>+</sup> &middot; e<sub>LWT,fine</sub> &nbsp;&nbsp;if&nbsp;||e|| &le; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(High precision)</em></div>
-</div>
-</div>
-</div>
-<div style="margin-top:8px;text-align:center">
-<span style="display:inline-block;background:rgba(5,150,105,0.12);color:#047857;border:1px solid rgba(5,150,105,0.4);border-radius:20px;padding:5px 14px;font-size:0.78rem;font-weight:600">&#10003; Only ONE velocity is computed and sent to the robot at any time t.</span>
-</div>
-</div>
-</div>
-
-</div>
-</div>
-</div>
-
-<!-- SLIDE 10: Control Loop & Smart Switch -->
-<div class="slide" id="slide-10">
-<div class="slide-content">
-<h2 class="fade-item">Control Loop &amp; Smart Switch Strategy</h2>
-<p class="desc fade-item" style="margin-bottom:16px">Implementation under ViSP framework: 25 FPS, sampling period T<sub>s</sub> = 0.04s</p>
-<div class="diagram-box fade-item">
-<h3 style="color:#475569;margin-bottom:16px;font-size:0.9rem;font-weight:700;letter-spacing:1px;text-transform:uppercase">Control Loop Block Diagram</h3>
-<div class="block-diagram">
+<div class="diagram-box fade-item" style="padding:14px 22px;margin:0 auto 14px">
+<h3 style="color:#475569;margin-bottom:8px;font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase">Control Loop Block Diagram</h3>
+<div class="block-diagram" style="margin:6px auto;padding:4px">
 <div class="block" style="border-color:rgba(5,150,105,0.5);color:#047857">I* (Desired<br>Image)</div>
 <div class="block-arrow">&#8594;</div>
 <div class="block" style="border-color:rgba(217,119,6,0.5);color:#b45309">Wavelet<br>Decomposition<br>(DWT/LWT)</div>
@@ -806,31 +732,115 @@ DEFENSE 2025-2026
 <div class="block-arrow">&#8594;</div>
 <div class="block" style="border-color:rgba(5,150,105,0.5);color:#047857">Robot<br>(Camera)</div>
 </div>
-<div style="text-align:center;margin-top:10px;color:#64748b;font-size:0.8rem">&#8592; Visual feedback loop at 25 FPS &#8592;</div>
+<div style="text-align:center;margin-top:6px;color:#64748b;font-size:0.78rem">&#8592; Visual feedback loop at 25 FPS &#8592;</div>
 </div>
-<div class="highlight-box fade-item">
-<h3 style="color:#d97706;margin-bottom:12px">Smart Switch: Coarse-to-Fine Strategy</h3>
-<div style="display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap">
-<div style="text-align:center;padding:14px 22px;background:rgba(8,145,178,0.08);border-radius:10px;border:1px solid rgba(8,145,178,0.3)">
-<div style="color:#0e7490;font-weight:700;font-size:0.95rem">Phase 1: Coarse</div>
-<div style="color:#475569;font-size:0.85rem;margin-top:4px">LL sub-band (approximation)</div>
-<div style="color:#64748b;font-size:0.75rem;margin-top:2px">Large convergence basin</div>
+
+<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch;justify-content:center">
+
+<!-- LEFT GROUP: DWT-PVS -->
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#0e7490;margin-bottom:10px;text-align:center;font-size:1.1rem">DWT-PVS</h3>
+
+<div style="margin-bottom:10px">
+<div style="color:#0e7490;font-weight:700;font-size:0.86rem;margin-bottom:4px">A. Wavelet Error</div>
+<div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">e<sub>w</sub> = W(I) &minus; W(I*)</div>
+<div style="font-size:0.78rem;color:#64748b">Photometric error computed in the wavelet domain W.</div>
 </div>
-<div style="color:#d97706;font-size:1.5rem;font-weight:bold">&#8594;</div>
-<div style="text-align:center;padding:14px 22px;background:rgba(124,58,237,0.08);border-radius:10px;border:1px solid rgba(124,58,237,0.3)">
-<div style="color:#7c3aed;font-weight:700;font-size:0.95rem">Switch Trigger</div>
-<div style="color:#475569;font-size:0.85rem;margin-top:4px">||e<sub>LL</sub>|| &lt; threshold</div>
-<div style="color:#64748b;font-size:0.75rem;margin-top:2px">Error convergence detected</div>
-</div>
-<div style="color:#d97706;font-size:1.5rem;font-weight:bold">&#8594;</div>
-<div style="text-align:center;padding:14px 22px;background:rgba(5,150,105,0.08);border-radius:10px;border:1px solid rgba(5,150,105,0.3)">
-<div style="color:#059669;font-weight:700;font-size:0.95rem">Phase 2: Fine</div>
-<div style="color:#475569;font-size:0.85rem;margin-top:4px">LH+HL+HH (details)</div>
-<div style="color:#64748b;font-size:0.75rem;margin-top:2px">High positioning accuracy</div>
+
+<div>
+<div style="color:#0e7490;font-weight:700;font-size:0.86rem;margin-bottom:4px">B. Wavelet Interaction Matrix</div>
+<div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">L<sub>w</sub> = W &middot; L<sub>I</sub></div>
+<div style="font-size:0.78rem;color:#64748b">Classical interaction matrix transformed into the wavelet domain.</div>
 </div>
 </div>
+
+<!-- RIGHT GROUP: LWT-PVS -->
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#7c3aed;margin-bottom:10px;text-align:center;font-size:1.1rem">LWT-PVS</h3>
+
+<div style="margin-bottom:10px">
+<div style="color:#7c3aed;font-weight:700;font-size:0.86rem;margin-bottom:4px">A. LWT Error</div>
+<div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">e<sub>LWT</sub> = W<sub>L</sub> &middot; (I &minus; I*)</div>
+<div style="font-size:0.78rem;color:#64748b">Error computed via the Lifting Wavelet Transform W<sub>L</sub>.</div>
 </div>
-<div class="fade-item" style="margin-top:16px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+
+<div>
+<div style="color:#7c3aed;font-weight:700;font-size:0.86rem;margin-bottom:4px">B. LWT Interaction Matrix</div>
+<div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">L<sub>LWT</sub> = W<sub>L</sub> &middot; L<sub>I</sub></div>
+<div style="font-size:0.78rem;color:#64748b">Interaction matrix lifted into the LWT domain.</div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<!-- SLIDE 10: Control Strategies: Switching & Smart Switch -->
+<div class="slide" id="slide-10">
+<div class="slide-content">
+<h2 class="fade-item" style="margin-bottom:10px">Control Strategies: Switching &amp; Smart Switch</h2>
+<p class="desc fade-item" style="margin-bottom:14px;font-size:0.95rem">Two complementary control laws drive the system: a switching mechanism for DWT-PVS and an optimal coarse-to-fine strategy for LWT-PVS.</p>
+
+<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch;justify-content:center;margin-bottom:14px">
+
+<!-- LEFT: DWT-PVS Switching Control Law -->
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#0e7490;margin-bottom:8px;text-align:center;font-size:1.05rem">DWT-PVS Switching Control Law</h3>
+<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.86rem;text-align:left">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:2.6em;font-weight:300;line-height:0.9;color:#0e7490">{</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1">
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>w,coarse</sub><sup>+</sup> &middot; e<sub>w,coarse</sub> &nbsp;&nbsp;if&nbsp;||e|| &gt; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Large displacement)</em></div>
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>w,fine</sub><sup>+</sup> &middot; e<sub>w,fine</sub> &nbsp;&nbsp;if&nbsp;||e|| &le; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Near convergence)</em></div>
+</div>
+</div>
+</div>
+<div style="font-size:0.78rem;color:#64748b;font-style:italic;margin-top:6px;text-align:center">Switches dynamically based on the error threshold &epsilon;.</div>
+</div>
+
+<!-- RIGHT: LWT-PVS Optimal Control Law -->
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#7c3aed;margin-bottom:8px;text-align:center;font-size:1.05rem">LWT-PVS Optimal Control Law</h3>
+<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.86rem;text-align:left">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="font-size:2.6em;font-weight:300;line-height:0.9;color:#7c3aed">{</div>
+<div style="display:flex;flex-direction:column;gap:6px;flex:1">
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>LWT,coarse</sub><sup>+</sup> &middot; e<sub>LWT,coarse</sub> &nbsp;&nbsp;if&nbsp;||e|| &gt; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(Avoids local minima)</em></div>
+<div>v<sub>c</sub> = &minus;&lambda; &middot; L̂<sub>LWT,fine</sub><sup>+</sup> &middot; e<sub>LWT,fine</sub> &nbsp;&nbsp;if&nbsp;||e|| &le; &epsilon; &nbsp;<em style="color:#64748b;font-size:0.88em">(High precision)</em></div>
+</div>
+</div>
+</div>
+<div style="margin-top:6px;text-align:center">
+<span style="display:inline-block;background:rgba(5,150,105,0.12);color:#047857;border:1px solid rgba(5,150,105,0.4);border-radius:20px;padding:4px 12px;font-size:0.74rem;font-weight:600">&#10003; Only ONE velocity is computed and sent to the robot at any time t.</span>
+</div>
+</div>
+
+</div>
+
+<div class="highlight-box fade-item" style="padding:14px 20px;margin:0 auto">
+<h3 style="color:#d97706;margin-bottom:10px;font-size:1.05rem">Smart Switch: Coarse-to-Fine Strategy</h3>
+<div style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap">
+<div style="text-align:center;padding:10px 18px;background:rgba(8,145,178,0.08);border-radius:10px;border:1px solid rgba(8,145,178,0.3)">
+<div style="color:#0e7490;font-weight:700;font-size:0.92rem">Phase 1: Coarse</div>
+<div style="color:#475569;font-size:0.82rem;margin-top:4px">LL sub-band (approximation)</div>
+<div style="color:#64748b;font-size:0.74rem;margin-top:2px">Large convergence basin</div>
+</div>
+<div style="color:#d97706;font-size:1.4rem;font-weight:bold">&#8594;</div>
+<div style="text-align:center;padding:10px 18px;background:rgba(124,58,237,0.08);border-radius:10px;border:1px solid rgba(124,58,237,0.3)">
+<div style="color:#7c3aed;font-weight:700;font-size:0.92rem">Switch Trigger</div>
+<div style="color:#475569;font-size:0.82rem;margin-top:4px">||e<sub>LL</sub>|| &lt; threshold</div>
+<div style="color:#64748b;font-size:0.74rem;margin-top:2px">Error convergence detected</div>
+</div>
+<div style="color:#d97706;font-size:1.4rem;font-weight:bold">&#8594;</div>
+<div style="text-align:center;padding:10px 18px;background:rgba(5,150,105,0.08);border-radius:10px;border:1px solid rgba(5,150,105,0.3)">
+<div style="color:#059669;font-weight:700;font-size:0.92rem">Phase 2: Fine</div>
+<div style="color:#475569;font-size:0.82rem;margin-top:4px">LH+HL+HH (details)</div>
+<div style="color:#64748b;font-size:0.74rem;margin-top:2px">High positioning accuracy</div>
+</div>
+</div>
+</div>
+
+<div class="fade-item" style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
 <span class="tag">Velocity Saturation</span>
 <span class="tag">Robot Safety</span>
 <span class="tag">Real-time 25 FPS</span>
