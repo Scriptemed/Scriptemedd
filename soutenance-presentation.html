@@ -84,7 +84,9 @@ p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0
 .scroll-hint .chevron{width:22px;height:22px;animation:bounce 1.8s ease-in-out infinite}
 @keyframes bounce{0%,100%{transform:translateY(0);opacity:0.6}50%{transform:translateY(6px);opacity:1}}
 .hero-visual{position:relative;width:100%;height:520px;display:flex;align-items:center;justify-content:center}
-.hero-visual svg{width:100%;height:100%;max-width:560px}
+.hero-visual svg{width:100%;height:100%;max-width:600px}
+@keyframes pulse-soft{0%,100%{opacity:0.45}50%{opacity:0.95}}
+.pulse-soft{animation:pulse-soft 3.2s ease-in-out infinite;transform-origin:center}
 @keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes spin-rev{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}
 @keyframes float-y{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
@@ -141,117 +143,282 @@ DEFENSE 2025-2026
 
 <!-- RIGHT: Hero visual -->
 <div class="fade-item hero-visual">
-<svg viewBox="0 0 560 520" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<svg viewBox="0 0 600 560" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
 <defs>
-<linearGradient id="hero-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
-<stop offset="0%" stop-color="#0891b2"/>
-<stop offset="50%" stop-color="#7c3aed"/>
-<stop offset="100%" stop-color="#db2777"/>
+<!-- Pupil & lens gradients -->
+<radialGradient id="pupil-grad" cx="38%" cy="38%" r="75%">
+<stop offset="0%" stop-color="#67e8f9"/>
+<stop offset="35%" stop-color="#0891b2"/>
+<stop offset="80%" stop-color="#6d28d9"/>
+<stop offset="100%" stop-color="#1e1b4b"/>
+</radialGradient>
+<radialGradient id="lens-bg-grad" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#7c3aed" stop-opacity="0.0"/>
+<stop offset="60%" stop-color="#0891b2" stop-opacity="0.18"/>
+<stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+</radialGradient>
+<linearGradient id="iris-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+<stop offset="0%" stop-color="#475569"/>
+<stop offset="100%" stop-color="#0f172a"/>
 </linearGradient>
-<linearGradient id="hero-grad-2" x1="0%" y1="0%" x2="100%" y2="0%">
-<stop offset="0%" stop-color="#7c3aed" stop-opacity="0.85"/>
-<stop offset="100%" stop-color="#db2777" stop-opacity="0.4"/>
+<linearGradient id="iris-grad-alt" x1="0%" y1="0%" x2="0%" y2="100%">
+<stop offset="0%" stop-color="#334155"/>
+<stop offset="100%" stop-color="#0f172a"/>
 </linearGradient>
-<linearGradient id="hero-grad-3" x1="0%" y1="0%" x2="100%" y2="100%">
-<stop offset="0%" stop-color="#0891b2" stop-opacity="0.4"/>
-<stop offset="100%" stop-color="#7c3aed" stop-opacity="0.15"/>
-</linearGradient>
-<linearGradient id="cone-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-<stop offset="0%" stop-color="#fef3c7" stop-opacity="0.95"/>
-<stop offset="100%" stop-color="#fde68a" stop-opacity="0.05"/>
-</linearGradient>
-<linearGradient id="band-1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0891b2" stop-opacity="0.7"/><stop offset="100%" stop-color="#0891b2" stop-opacity="0.05"/></linearGradient>
-<linearGradient id="band-2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#059669" stop-opacity="0.7"/><stop offset="100%" stop-color="#059669" stop-opacity="0.05"/></linearGradient>
-<linearGradient id="band-3" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#d97706" stop-opacity="0.7"/><stop offset="100%" stop-color="#d97706" stop-opacity="0.05"/></linearGradient>
-<linearGradient id="band-4" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#db2777" stop-opacity="0.7"/><stop offset="100%" stop-color="#db2777" stop-opacity="0.05"/></linearGradient>
-<linearGradient id="band-5" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.7"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0.05"/></linearGradient>
-<filter id="hero-glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<!-- Wave gradients -->
+<linearGradient id="wave-teal" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0891b2" stop-opacity="0.95"/><stop offset="100%" stop-color="#0891b2" stop-opacity="0.04"/></linearGradient>
+<linearGradient id="wave-emerald" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#10b981" stop-opacity="0.95"/><stop offset="100%" stop-color="#10b981" stop-opacity="0.04"/></linearGradient>
+<linearGradient id="wave-amber" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f59e0b" stop-opacity="0.95"/><stop offset="100%" stop-color="#f59e0b" stop-opacity="0.04"/></linearGradient>
+<linearGradient id="wave-pink" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#db2777" stop-opacity="0.95"/><stop offset="100%" stop-color="#db2777" stop-opacity="0.04"/></linearGradient>
+<linearGradient id="wave-violet" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.95"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0.04"/></linearGradient>
+<linearGradient id="wave-blue" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0e7490" stop-opacity="0.95"/><stop offset="100%" stop-color="#0e7490" stop-opacity="0.04"/></linearGradient>
+<linearGradient id="wave-pink-alt" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#be185d" stop-opacity="0.9"/><stop offset="100%" stop-color="#be185d" stop-opacity="0.04"/></linearGradient>
+<!-- Joint gradients -->
+<radialGradient id="joint-teal" cx="35%" cy="35%" r="70%"><stop offset="0%" stop-color="#67e8f9"/><stop offset="100%" stop-color="#0e7490"/></radialGradient>
+<radialGradient id="joint-violet" cx="35%" cy="35%" r="70%"><stop offset="0%" stop-color="#c4b5fd"/><stop offset="100%" stop-color="#6d28d9"/></radialGradient>
+<radialGradient id="joint-pink" cx="35%" cy="35%" r="70%"><stop offset="0%" stop-color="#f9a8d4"/><stop offset="100%" stop-color="#be185d"/></radialGradient>
+<!-- Background dotted grid -->
+<pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+<circle cx="2" cy="2" r="1.1" fill="#1e293b" fill-opacity="0.06"/>
+</pattern>
+<!-- Filters -->
+<filter id="lens-glow" x="-40%" y="-40%" width="180%" height="180%">
+<feGaussianBlur stdDeviation="7" result="blur"/>
+<feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<filter id="card-shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="3.2"/>
+<feOffset dx="0" dy="3" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.22"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+<!-- Clip paths for cards (diagonal hatch needs clipping) -->
+<clipPath id="card3-clip"><rect x="42" y="120" width="72" height="72" rx="9"/></clipPath>
 </defs>
 
-<!-- Decomposition grid (background) -->
-<g opacity="0.3">
-<rect x="380" y="40" width="140" height="140" fill="none" stroke="#7c3aed" stroke-width="0.7" stroke-dasharray="3 3"/>
-<line x1="450" y1="40" x2="450" y2="180" stroke="#7c3aed" stroke-width="0.7" stroke-dasharray="3 3"/>
-<line x1="380" y1="110" x2="520" y2="110" stroke="#7c3aed" stroke-width="0.7" stroke-dasharray="3 3"/>
-<line x1="415" y1="40" x2="415" y2="110" stroke="#0891b2" stroke-width="0.5" stroke-dasharray="2 2"/>
-<line x1="380" y1="75" x2="450" y2="75" stroke="#0891b2" stroke-width="0.5" stroke-dasharray="2 2"/>
-<text x="397" y="60" font-size="9" fill="#0891b2" font-weight="700" text-anchor="middle">LL</text>
-<text x="432" y="60" font-size="9" fill="#7c3aed" font-weight="700" text-anchor="middle">HL</text>
-<text x="397" y="95" font-size="9" fill="#7c3aed" font-weight="700" text-anchor="middle">LH</text>
-<text x="432" y="95" font-size="9" fill="#db2777" font-weight="700" text-anchor="middle">HH</text>
-<text x="485" y="80" font-size="10" fill="#7c3aed" font-weight="700" text-anchor="middle">HL</text>
-<text x="450" y="150" font-size="10" fill="#7c3aed" font-weight="700" text-anchor="middle">LH</text>
-<text x="485" y="150" font-size="10" fill="#db2777" font-weight="700" text-anchor="middle">HH</text>
+<!-- Background dotted grid -->
+<rect width="600" height="560" fill="url(#dot-grid)"/>
+
+<!-- Top-right viewfinder reticle -->
+<g stroke="#475569" stroke-width="1.5" fill="none" opacity="0.55">
+<path d="M 510 30 L 510 44 M 510 30 L 524 30"/>
+<path d="M 568 30 L 554 30 M 568 30 L 568 44"/>
+<path d="M 510 78 L 510 64 M 510 78 L 524 78"/>
+<path d="M 568 78 L 554 78 M 568 78 L 568 64"/>
+<line x1="535" y1="54" x2="543" y2="54" stroke-width="1"/>
+<line x1="539" y1="50" x2="539" y2="58" stroke-width="1"/>
+</g>
+<g opacity="0.7">
+<text x="486" y="38" font-size="8" font-weight="700" fill="#475569" letter-spacing="1.5">REC</text>
+<circle cx="476" cy="34" r="2.4" fill="#db2777"><animate attributeName="opacity" values="1;0.25;1" dur="1.3s" repeatCount="indefinite"/></circle>
 </g>
 
-<!-- Outer rotating ring -->
-<g transform="translate(280 260)" class="ring-spin">
-<circle r="240" fill="none" stroke="url(#hero-grad-1)" stroke-width="1.5" stroke-dasharray="6 12" opacity="0.4"/>
-<circle cx="240" cy="0" r="4" fill="#0891b2"/>
-<circle cx="-240" cy="0" r="4" fill="#db2777"/>
+<!-- Wavelet wave bands radiating outward from the lens -->
+<g fill="none" stroke-linecap="round">
+<!-- right -->
+<path d="M 425 268 C 460 248, 495 252, 525 268 S 580 290, 595 270" stroke="url(#wave-teal)" stroke-width="5.5" stroke-dasharray="240" opacity="0.95">
+<animate attributeName="stroke-dashoffset" values="240;-240" dur="6s" repeatCount="indefinite"/>
+</path>
+<!-- lower-right -->
+<path d="M 405 358 C 445 365, 470 405, 510 415 S 575 445, 595 478" stroke="url(#wave-emerald)" stroke-width="4" stroke-dasharray="260" opacity="0.9">
+<animate attributeName="stroke-dashoffset" values="260;-260" dur="7.5s" repeatCount="indefinite"/>
+</path>
+<!-- down -->
+<path d="M 305 410 C 295 440, 322 462, 312 492 S 296 540, 308 558" stroke="url(#wave-amber)" stroke-width="3.5" stroke-dasharray="200" opacity="0.85">
+<animate attributeName="stroke-dashoffset" values="200;-200" dur="6.5s" repeatCount="indefinite"/>
+</path>
+<!-- upper-right -->
+<path d="M 405 195 C 442 175, 470 200, 510 178 S 575 138, 590 100" stroke="url(#wave-blue)" stroke-width="4" stroke-dasharray="260" opacity="0.9">
+<animate attributeName="stroke-dashoffset" values="260;-260" dur="8s" repeatCount="indefinite"/>
+</path>
+<!-- up -->
+<path d="M 295 145 C 290 110, 320 92, 308 60 S 290 22, 302 4" stroke="url(#wave-violet)" stroke-width="3.5" stroke-dasharray="200" opacity="0.85">
+<animate attributeName="stroke-dashoffset" values="200;-200" dur="7s" repeatCount="indefinite"/>
+</path>
+<!-- upper-left -->
+<path d="M 195 195 C 162 175, 130 200, 98 178 S 38 138, 12 122" stroke="url(#wave-pink)" stroke-width="4" stroke-dasharray="260" opacity="0.9">
+<animate attributeName="stroke-dashoffset" values="260;-260" dur="7.5s" repeatCount="indefinite"/>
+</path>
+<!-- left -->
+<path d="M 175 280 C 140 268, 115 296, 80 278 S 25 260, 5 282" stroke="url(#wave-teal)" stroke-width="3.5" stroke-dasharray="220" opacity="0.85">
+<animate attributeName="stroke-dashoffset" values="220;-220" dur="9s" repeatCount="indefinite"/>
+</path>
 </g>
 
-<!-- Inner counter ring -->
-<g transform="translate(280 260)" class="ring-rev">
-<circle r="200" fill="none" stroke="#7c3aed" stroke-width="1" stroke-dasharray="2 8" opacity="0.35"/>
-<circle cx="0" cy="-200" r="3" fill="#7c3aed"/>
+<!-- Robot arm silhouette (bottom-left), pointing toward the central eye -->
+<g>
+<!-- Floor shadow -->
+<ellipse cx="92" cy="544" rx="55" ry="5" fill="#0f172a" opacity="0.18"/>
+<!-- Base plate -->
+<rect x="40" y="528" width="100" height="20" rx="4" fill="#1e293b"/>
+<rect x="60" y="510" width="60" height="20" rx="3" fill="#334155"/>
+<!-- Shoulder pillar -->
+<rect x="80" y="482" width="22" height="30" rx="2" fill="#475569"/>
+<!-- Shoulder J1 (teal) -->
+<circle cx="91" cy="482" r="13" fill="url(#joint-teal)"/>
+<circle cx="91" cy="482" r="5" fill="#0f172a"/>
+<!-- Upper arm: rotates 50deg cw around (91,482), tip lands at J2 (151,432) -->
+<g transform="rotate(50 91 482)">
+<rect x="83" y="404" width="16" height="78" rx="6" fill="#334155"/>
+<rect x="83" y="404" width="16" height="14" rx="3" fill="#475569"/>
+</g>
+<!-- Elbow J2 (violet) -->
+<circle cx="151" cy="432" r="11" fill="url(#joint-violet)"/>
+<circle cx="151" cy="432" r="4.5" fill="#0f172a"/>
+<!-- Forearm: rotates 65deg cw around (151,432), tip lands at J3 (211,404) -->
+<g transform="rotate(65 151 432)">
+<rect x="143" y="366" width="16" height="66" rx="5" fill="#475569"/>
+<rect x="143" y="366" width="16" height="12" rx="3" fill="#64748b"/>
+</g>
+<!-- Wrist J3 (pink) end-effector -->
+<circle cx="211" cy="404" r="9" fill="url(#joint-pink)"/>
+<circle cx="211" cy="404" r="3.5" fill="#0f172a"/>
+<!-- End-effector tip / sensor -->
+<line x1="211" y1="404" x2="222" y2="395" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+<circle cx="223" cy="394" r="2.6" fill="#0891b2"/>
 </g>
 
-<!-- Translucent overlapping circles -->
-<circle cx="160" cy="180" r="100" fill="url(#hero-grad-3)" opacity="0.7"/>
-<circle cx="240" cy="240" r="120" fill="url(#hero-grad-1)" opacity="0.18"/>
-<circle cx="380" cy="380" r="90" fill="url(#hero-grad-2)" opacity="0.25"/>
+<!-- Dashed feedback line from arm tip flowing into the lens -->
+<path d="M 223 394 C 235 380 240 372 235 360" fill="none" stroke="#7c3aed" stroke-width="1.6" stroke-dasharray="5 4" opacity="0.75">
+<animate attributeName="stroke-dashoffset" values="0;-18" dur="1.4s" repeatCount="indefinite"/>
+</path>
 
-<!-- Robot arm silhouette -->
-<g transform="translate(140 380)">
-<!-- Base -->
-<rect x="-50" y="40" width="100" height="22" rx="4" fill="#1e293b" opacity="0.85"/>
-<rect x="-40" y="20" width="80" height="22" rx="3" fill="#334155"/>
-<!-- Shoulder joint -->
-<circle cx="0" cy="20" r="14" fill="#0891b2"/>
-<circle cx="0" cy="20" r="6" fill="#1e293b"/>
-<!-- Upper arm -->
-<rect x="-10" y="-60" width="20" height="80" rx="6" fill="#334155" transform="rotate(-25 0 20)"/>
-<!-- Elbow joint -->
-<circle cx="-34" cy="-50" r="11" fill="#7c3aed"/>
-<circle cx="-34" cy="-50" r="5" fill="#1e293b"/>
-<!-- Forearm -->
-<rect x="-44" y="-120" width="20" height="74" rx="6" fill="#475569" transform="rotate(15 -34 -50)"/>
-<!-- Wrist joint -->
-<circle cx="-12" cy="-110" r="9" fill="#db2777"/>
+<!-- ===== CENTRAL CAMERA EYE (focal point) ===== -->
+<g transform="translate(300 280)">
+<!-- Outer dashed rotating rings -->
+<g class="ring-spin">
+<circle r="172" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="3 9" opacity="0.45"/>
+<circle cx="172" cy="0" r="3" fill="#0891b2" opacity="0.85"/>
+<circle cx="-172" cy="0" r="2" fill="#0891b2" opacity="0.6"/>
+</g>
+<g class="ring-rev">
+<circle r="152" fill="none" stroke="#7c3aed" stroke-width="1" stroke-dasharray="2 6" opacity="0.45"/>
+<circle cx="0" cy="-152" r="2.5" fill="#7c3aed" opacity="0.85"/>
+</g>
+<g class="ring-spin">
+<circle r="134" fill="none" stroke="#db2777" stroke-width="0.8" stroke-dasharray="1 5" opacity="0.4"/>
 </g>
 
-<!-- Camera at end-effector -->
-<g transform="translate(128 270)" class="float-1" filter="url(#hero-glow)">
-<rect x="-26" y="-18" width="52" height="36" rx="5" fill="#1e293b"/>
-<rect x="-26" y="-22" width="20" height="6" rx="2" fill="#334155"/>
-<circle cx="0" cy="0" r="13" fill="#0f172a" stroke="#0891b2" stroke-width="1.5"/>
-<circle cx="0" cy="0" r="8" fill="#0891b2" opacity="0.7"/>
-<circle cx="-3" cy="-3" r="3" fill="#fef3c7" opacity="0.85"/>
-<circle cx="18" cy="-12" r="2.5" fill="#db2777"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+<!-- Soft glow halo behind lens -->
+<circle r="120" fill="url(#lens-bg-grad)" filter="url(#lens-glow)"/>
+
+<!-- Lens body (dark) -->
+<circle r="115" fill="#0f172a"/>
+<circle r="115" fill="none" stroke="#1e293b" stroke-width="3"/>
+<circle r="110" fill="none" stroke="#475569" stroke-width="0.8" opacity="0.6"/>
+<circle r="106" fill="none" stroke="#334155" stroke-width="0.6" opacity="0.5"/>
+
+<!-- 8 aperture blades (curved, swept) -->
+<g fill="url(#iris-grad)" stroke="#0f172a" stroke-width="0.7">
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(0)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(45)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(90)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(135)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(180)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(225)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(270)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(315)"/>
+</g>
+<!-- subtle blade highlights for depth -->
+<g fill="none" stroke="#64748b" stroke-width="0.6" opacity="0.55">
+<path d="M -8 -48 L -38 -98" transform="rotate(0)"/>
+<path d="M -8 -48 L -38 -98" transform="rotate(45)"/>
+<path d="M -8 -48 L -38 -98" transform="rotate(90)"/>
+<path d="M -8 -48 L -38 -98" transform="rotate(135)"/>
+<path d="M -8 -48 L -38 -98" transform="rotate(180)"/>
+<path d="M -8 -48 L -38 -98" transform="rotate(225)"/>
+<path d="M -8 -48 L -38 -98" transform="rotate(270)"/>
+<path d="M -8 -48 L -38 -98" transform="rotate(315)"/>
 </g>
 
-<!-- Light cone breaking into wavelet bands -->
-<g opacity="0.92">
-<polygon points="155,270 540,180 540,360" fill="url(#cone-grad)" opacity="0.55"/>
-<!-- Wavelet bands emerging from the cone -->
-<path d="M 280 235 Q 380 220 540 198" fill="none" stroke="url(#band-1)" stroke-width="6" stroke-linecap="round"/>
-<path d="M 290 252 Q 390 248 540 232" fill="none" stroke="url(#band-2)" stroke-width="6" stroke-linecap="round"/>
-<path d="M 295 270 Q 395 270 540 270" fill="none" stroke="url(#band-3)" stroke-width="6" stroke-linecap="round"/>
-<path d="M 290 288 Q 390 292 540 308" fill="none" stroke="url(#band-4)" stroke-width="6" stroke-linecap="round"/>
-<path d="M 280 305 Q 380 320 540 342" fill="none" stroke="url(#band-5)" stroke-width="6" stroke-linecap="round"/>
+<!-- Pupil rim -->
+<circle r="52" fill="none" stroke="#0f172a" stroke-width="2.5"/>
+<circle r="50" fill="url(#pupil-grad)"/>
+<circle r="50" fill="none" stroke="#1e293b" stroke-width="0.6" opacity="0.5"/>
+
+<!-- Tiny DWT 4-quadrant grid inside pupil -->
+<g opacity="0.55" stroke="#f8fafc">
+<rect x="-22" y="-22" width="44" height="44" fill="none" stroke-width="0.7"/>
+<line x1="0" y1="-22" x2="0" y2="22" stroke-width="0.7"/>
+<line x1="-22" y1="0" x2="22" y2="0" stroke-width="0.7"/>
+<line x1="-11" y1="-22" x2="-11" y2="0" stroke-width="0.4" opacity="0.7"/>
+<line x1="-22" y1="-11" x2="0" y2="-11" stroke-width="0.4" opacity="0.7"/>
+</g>
+<g fill="#f8fafc" font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
+<text x="-16.5" y="-14" font-size="3.5" opacity="0.85">LL</text>
+<text x="11" y="-7" font-size="6" opacity="0.85">HL</text>
+<text x="-11" y="17" font-size="6" opacity="0.85">LH</text>
+<text x="11" y="17" font-size="6" opacity="0.7">HH</text>
 </g>
 
-<!-- Floating wavelet waveforms -->
-<g class="float-2" opacity="0.85">
-<path d="M 350 100 Q 360 75 370 100 T 390 100 T 410 100 T 430 100 T 450 100" fill="none" stroke="#0891b2" stroke-width="2" stroke-linecap="round"/>
-<path d="M 360 425 Q 370 410 380 425 T 400 425 T 420 425 T 440 425" fill="none" stroke="#db2777" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+<!-- Specular highlight reflection -->
+<ellipse cx="-18" cy="-22" rx="13" ry="7" fill="#f8fafc" opacity="0.45"/>
+<circle cx="-22" cy="-26" r="3.5" fill="#ffffff" opacity="0.9"/>
+<circle cx="14" cy="14" r="2.2" fill="#ffffff" opacity="0.55"/>
+
+<!-- Sensor LED on outer rim -->
+<circle cx="86" cy="-78" r="3" fill="#10b981">
+<animate attributeName="opacity" values="1;0.3;1" dur="1.4s" repeatCount="indefinite"/>
+</circle>
+<circle cx="86" cy="-78" r="5" fill="none" stroke="#10b981" stroke-width="0.8" opacity="0.4"/>
 </g>
 
-<!-- Tiny accent dots -->
-<circle cx="500" cy="450" r="4" fill="#7c3aed" opacity="0.6"><animate attributeName="r" values="3;5;3" dur="2.4s" repeatCount="indefinite"/></circle>
-<circle cx="60" cy="80" r="3.5" fill="#0891b2" opacity="0.55"><animate attributeName="r" values="2.5;4.5;2.5" dur="2.8s" repeatCount="indefinite"/></circle>
-<circle cx="510" cy="90" r="3" fill="#db2777" opacity="0.55"/>
+<!-- ===== Floating wavelet sub-band cards (orbit the eye) ===== -->
+<!-- Card 1: top-right, horizontal stripes (HL band), teal border -->
+<g class="float-1" filter="url(#card-shadow)">
+<rect x="488" y="100" width="72" height="72" rx="9" fill="#ffffff" stroke="#0891b2" stroke-width="1.6"/>
+<g stroke="#0891b2" stroke-width="2.8" stroke-linecap="round" opacity="0.85">
+<line x1="498" y1="116" x2="550" y2="116"/>
+<line x1="498" y1="128" x2="550" y2="128"/>
+<line x1="498" y1="140" x2="550" y2="140"/>
+<line x1="498" y1="152" x2="550" y2="152"/>
+<line x1="498" y1="164" x2="550" y2="164"/>
+</g>
+<text x="524" y="92" font-size="8" font-weight="700" fill="#0e7490" text-anchor="middle" letter-spacing="1">HL</text>
+</g>
+
+<!-- Card 2: bottom-right, vertical lines (LH band), violet border -->
+<g class="float-2" filter="url(#card-shadow)">
+<rect x="488" y="380" width="72" height="72" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="1.6"/>
+<g stroke="#7c3aed" stroke-width="2.8" stroke-linecap="round" opacity="0.85">
+<line x1="500" y1="394" x2="500" y2="438"/>
+<line x1="512" y1="394" x2="512" y2="438"/>
+<line x1="524" y1="394" x2="524" y2="438"/>
+<line x1="536" y1="394" x2="536" y2="438"/>
+<line x1="548" y1="394" x2="548" y2="438"/>
+</g>
+<text x="524" y="468" font-size="8" font-weight="700" fill="#6d28d9" text-anchor="middle" letter-spacing="1">LH</text>
+</g>
+
+<!-- Card 3: top-left, diagonal hatch (HH band), pink border -->
+<g class="float-1" filter="url(#card-shadow)">
+<rect x="42" y="120" width="72" height="72" rx="9" fill="#ffffff" stroke="#db2777" stroke-width="1.6"/>
+<g stroke="#db2777" stroke-width="2.4" stroke-linecap="round" opacity="0.8" clip-path="url(#card3-clip)">
+<line x1="32" y1="156" x2="124" y2="64"/>
+<line x1="32" y1="174" x2="124" y2="82"/>
+<line x1="32" y1="192" x2="124" y2="100"/>
+<line x1="32" y1="210" x2="124" y2="118"/>
+<line x1="32" y1="228" x2="124" y2="136"/>
+<line x1="32" y1="246" x2="124" y2="154"/>
+</g>
+<text x="78" y="112" font-size="8" font-weight="700" fill="#be185d" text-anchor="middle" letter-spacing="1">HH</text>
+</g>
+
+<!-- ===== Particle dots scattered around ===== -->
+<g>
+<circle cx="38" cy="62" r="3" fill="#7c3aed" opacity="0.55"><animate attributeName="r" values="2;4;2" dur="3s" repeatCount="indefinite"/></circle>
+<circle cx="172" cy="78" r="2.5" fill="#0891b2" opacity="0.55"/>
+<circle cx="430" cy="56" r="2.5" fill="#7c3aed" opacity="0.55"><animate attributeName="r" values="1.8;3.6;1.8" dur="3.6s" repeatCount="indefinite"/></circle>
+<circle cx="582" cy="218" r="3.5" fill="#db2777" opacity="0.55"><animate attributeName="r" values="2.5;4.5;2.5" dur="3.4s" repeatCount="indefinite"/></circle>
+<circle cx="35" cy="288" r="2.5" fill="#10b981" opacity="0.55"/>
+<circle cx="22" cy="402" r="3" fill="#0891b2" opacity="0.5"/>
+<circle cx="288" cy="498" r="2.5" fill="#7c3aed" opacity="0.55"/>
+<circle cx="392" cy="514" r="3.5" fill="#db2777" opacity="0.5"><animate attributeName="r" values="2.5;4;2.5" dur="2.8s" repeatCount="indefinite"/></circle>
+<circle cx="476" cy="538" r="2.6" fill="#f59e0b" opacity="0.6"/>
+<circle cx="582" cy="338" r="3" fill="#10b981" opacity="0.55"><animate attributeName="r" values="2;3.8;2" dur="3.2s" repeatCount="indefinite"/></circle>
+<circle cx="262" cy="40" r="2" fill="#f59e0b" opacity="0.6"/>
+<circle cx="142" cy="498" r="2.4" fill="#0891b2" opacity="0.55"/>
+</g>
 </svg>
 </div>
 </div>
