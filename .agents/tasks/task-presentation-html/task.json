@@ -1,0 +1,7 @@
+{
+  "task_id": "task-presentation-html",
+  "task_description": "Create a complete thesis defense HTML presentation for 'Direct Visual Servoing Using Multiscale Decomposition' with 11 slides, add a stunning robot arm power-on animation in slide 2, and give each tag button a distinct individual color instead of a shared gradient.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}
