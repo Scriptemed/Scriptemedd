@@ -1,0 +1,18 @@
+{
+  "project_type": "Static HTML/CSS/JS website - login portal and thesis presentation",
+  "language": "HTML, CSS, JavaScript",
+  "build_system": "None - static files served directly",
+  "test_framework": "None - static HTML files, validate by opening in browser",
+  "build_command": null,
+  "test_command": null,
+  "verification_instructions": "Verify the HTML file is well-formed and contains all required elements. Check that CSS animations are syntactically correct.",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "No setup needed - static files only",
+  "environment_constraints": "No build tools required. File is a single self-contained HTML document with inline CSS and JS.",
+  "contribution_requirements": "Files are in the repository root. Single-file HTML presentations with inline styles and scripts.",
+  "key_patterns": "The project uses single HTML files with linked or inline CSS/JS. The presentation.html should be a self-contained single-file presentation about 'Direct Visual Servoing Using Multiscale Decomposition' with 11 slides, inline CSS styles, and inline JavaScript for navigation and particle background.",
+  "relevant_files": [
+    "presentation.html"
+  ],
+  "directory_structure": "Flat repository root with HTML pages, CSS files, and JS files for a login portal. presentation.html is a standalone thesis defense presentation."
+}

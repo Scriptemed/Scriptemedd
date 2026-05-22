@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Direct Visual Servoing Using Multiscale Decomposition - Thesis Defense</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 45%,#fef7ff 100%)}
+#canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.55}
+#progress-bar{position:fixed;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#0891b2,#7c3aed,#db2777);z-index:1000;transition:width 0.6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(124,58,237,0.4)}
+#slide-counter{position:fixed;bottom:14px;right:24px;font-size:0.8rem;color:#64748b;z-index:1000;font-weight:500;letter-spacing:1.2px}
+
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;opacity:0;transform:translateX(80px) scale(0.95);transition:opacity 0.8s cubic-bezier(0.25,1,0.5,1),transform 0.8s cubic-bezier(0.25,1,0.5,1);pointer-events:none;z-index:1}
+.slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:all;z-index:10}
+.slide.past{opacity:0;transform:translateX(-80px) scale(0.95)}
+
+.slide-content{max-width:1200px;width:100%;text-align:center;position:relative;z-index:2}
+h1{font-size:3rem;font-weight:800;letter-spacing:-1px;margin-bottom:16px;background:linear-gradient(110deg,#0891b2 0%,#7c3aed 45%,#db2777 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+h2{font-size:2rem;font-weight:700;margin-bottom:24px;background:linear-gradient(110deg,#0e7490,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.3px}
+h3{font-size:1.25rem;font-weight:600;color:#0e7490;margin-bottom:12px}
+p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0 auto}
+.subtitle{font-size:1.15rem;color:#475569;margin-top:14px;font-weight:400;letter-spacing:0.2px}
+.authors{font-size:1.25rem;color:#1e293b;margin-top:8px;font-weight:600}
+.school{font-size:0.85rem;color:#64748b;margin-top:6px;letter-spacing:2.5px;text-transform:uppercase;font-weight:600}
+
+.fade-item{opacity:0;transform:translateY(40px) scale(0.9);transition:opacity 0.6s ease,transform 0.7s cubic-bezier(0.34,1.56,0.64,1)}
+.slide.active .fade-item{opacity:1;transform:translateY(0) scale(1)}
+.slide.active .fade-item:nth-child(1){transition-delay:0.1s}
+.slide.active .fade-item:nth-child(2){transition-delay:0.25s}
+.slide.active .fade-item:nth-child(3){transition-delay:0.4s}
+.slide.active .fade-item:nth-child(4){transition-delay:0.55s}
+.slide.active .fade-item:nth-child(5){transition-delay:0.7s}
+.slide.active .fade-item:nth-child(6){transition-delay:0.85s}
+.slide.active .fade-item:nth-child(7){transition-delay:1.0s}
+
+.bullet-list{text-align:left;margin:20px auto;max-width:800px;list-style:none}
+.bullet-list li{padding:10px 0 10px 30px;position:relative;font-size:1.05rem;color:#334155;line-height:1.6}
+.bullet-list li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#0891b2,#7c3aed);box-shadow:0 0 8px rgba(124,58,237,0.4)}
+.diagram-box{background:rgba(255,255,255,0.75);border:1px solid rgba(124,58,237,0.18);border-radius:18px;padding:30px;margin:20px auto;max-width:960px;position:relative;overflow:hidden;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(15,23,42,0.06),0 2px 6px rgba(15,23,42,0.04)}
+.diagram-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#0891b2,#7c3aed,#db2777,transparent)}
+.glow-card{background:rgba(255,255,255,0.85);border:1px solid rgba(124,58,237,0.16);border-radius:14px;padding:22px;margin:10px;flex:1;min-width:200px;backdrop-filter:blur(10px);box-shadow:0 4px 20px rgba(15,23,42,0.06),0 1px 3px rgba(15,23,42,0.04);transition:transform 0.3s ease,box-shadow 0.3s ease}
+.glow-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(124,58,237,0.12),0 2px 6px rgba(15,23,42,0.06)}
+.glow-card h4{color:#0e7490;margin-bottom:8px;font-size:1.05rem;font-weight:700}
+.glow-card p{font-size:0.95rem;color:#475569;line-height:1.55}
+.cards-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;margin-top:20px}
+.equation{font-family:'JetBrains Mono','Courier New',monospace;background:linear-gradient(135deg,#f1f5f9,#eef2ff);border:1px solid rgba(124,58,237,0.18);border-radius:10px;padding:14px 22px;margin:12px auto;max-width:720px;font-size:1rem;color:#1e293b;letter-spacing:0.4px;box-shadow:inset 0 1px 0 rgba(255,255,255,0.8),0 1px 2px rgba(15,23,42,0.04)}
+.equation strong{color:#7c3aed}
+.nav-hint{position:fixed;bottom:14px;left:24px;font-size:0.72rem;color:#94a3b8;z-index:1000;letter-spacing:0.5px}
+.comparison-table{width:100%;max-width:780px;margin:20px auto;border-collapse:separate;border-spacing:0;background:rgba(255,255,255,0.85);border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(15,23,42,0.06);border:1px solid rgba(124,58,237,0.12)}
+.comparison-table th,.comparison-table td{padding:13px 18px;text-align:left;border-bottom:1px solid rgba(124,58,237,0.08)}
+.comparison-table th{color:#fff;font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:1.2px;background:linear-gradient(110deg,#0e7490,#7c3aed)}
+.comparison-table td{color:#334155;font-size:0.95rem}
+.comparison-table tr:last-child td{border-bottom:none}
+.comparison-table tbody tr:hover td{background:rgba(124,58,237,0.04)}
+.lifting-diagram{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px auto;padding:16px}
+.lift-step{background:linear-gradient(135deg,#ffffff,#f8fafc);border:1px solid rgba(8,145,178,0.3);border-radius:12px;padding:14px 20px;text-align:center;min-width:120px;box-shadow:0 4px 12px rgba(8,145,178,0.08),inset 0 1px 0 rgba(255,255,255,0.9)}
+.lift-step .step-title{color:#0891b2;font-weight:700;font-size:0.95rem;margin-bottom:4px}
+.lift-step .step-desc{color:#64748b;font-size:0.78rem;line-height:1.4}
+.arrow-right{color:#7c3aed;font-size:1.4rem;font-weight:bold}
+.block-diagram{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:20px auto;padding:10px}
+.block{background:#ffffff;border:1.5px solid rgba(124,58,237,0.3);border-radius:10px;padding:12px 14px;text-align:center;font-size:0.82rem;color:#1e293b;min-width:104px;box-shadow:0 3px 10px rgba(15,23,42,0.06);font-weight:500}
+.block-arrow{color:#0891b2;font-size:1.1rem;font-weight:bold}
+.highlight-box{background:linear-gradient(135deg,rgba(124,58,237,0.06),rgba(8,145,178,0.06),rgba(219,39,119,0.04));border:1px solid rgba(124,58,237,0.22);border-radius:14px;padding:22px;margin:15px auto;max-width:850px;box-shadow:0 4px 20px rgba(15,23,42,0.05)}
+/* MODIFICATION 1: Individual tag colors */
+.tag{display:inline-block;padding:5px 14px;border-radius:20px;font-size:0.75rem;font-weight:600;margin:4px;letter-spacing:0.5px;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:transform 0.2s ease}
+.tag:hover{transform:translateY(-2px)}
+.hero-tags .tag:nth-child(1),.seq-s11-tags span:nth-child(1){background:#1e40af}
+.hero-tags .tag:nth-child(2),.seq-s11-tags span:nth-child(2){background:#059669}
+.hero-tags .tag:nth-child(3),.seq-s11-tags span:nth-child(3){background:#d97706}
+.hero-tags .tag:nth-child(4),.seq-s11-tags span:nth-child(4){background:#be185d}
+.icon-bullet{display:flex;align-items:flex-start;gap:16px;text-align:left;margin:12px 0;padding:10px 14px;border-radius:12px;background:rgba(255,255,255,0.7);border:1px solid rgba(124,58,237,0.1);transition:all 0.3s ease}
+.icon-bullet:hover{background:rgba(255,255,255,0.95);border-color:rgba(124,58,237,0.25);transform:translateX(4px)}
+.icon-bullet .icon{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#0891b2,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1.1rem;color:#fff;box-shadow:0 4px 12px rgba(124,58,237,0.3)}
+.icon-bullet .text{color:#334155;font-size:1rem;line-height:1.5}
+.icon-bullet .text strong{color:#0e7490;font-weight:700}
+
+/* ==================================================== */
+/* === LES ANIMATIONS CREATIVES (STUNNING EFFECTS) ==== */
+/* ==================================================== */
+
+@keyframes popGlow {
+    0% { opacity: 0; transform: scale(0.6) translateY(20px); box-shadow: 0 0 0 rgba(124,58,237,0); }
+    70% { opacity: 1; transform: scale(1.05) translateY(-5px); box-shadow: 0 10px 25px rgba(124,58,237,0.4); }
+    100% { opacity: 1; transform: scale(1) translateY(0); box-shadow: 0 4px 12px rgba(15,23,42,0.06); }
+}
+
+@keyframes slideDrawRight {
+    0% { opacity: 0; transform: translateX(-30px) scale(0.8); }
+    100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes expandQuadrant {
+    0% { opacity: 0; transform: scale(0.5); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Slide 5 Sequence */
+.slide.active .seq-s5-table { opacity: 0; animation: popGlow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.3s; }
+.slide.active .seq-s5-box { opacity: 0; animation: popGlow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.7s; }
+.slide.active .seq-s5-eq { opacity: 0; animation: popGlow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 1.1s; }
+
+/* Slide 7 Sequence (Frequency Analysis) */
+.slide.active .stagger-box { opacity: 0; animation: popGlow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.slide.active .stagger-box:nth-child(1) { animation-delay: 0.3s; }
+.slide.active .stagger-box:nth-child(2) { animation-delay: 0.8s; }
+.slide.active .stagger-box:nth-child(3) { animation-delay: 1.3s; }
+
+/* Slide 8 Sequence (DWT Decomposition) */
+.slide.active .anim-dwt-in { opacity: 0; animation: popGlow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.3s; transform-origin: 70px 175px; }
+.slide.active .anim-dwt-arr { opacity: 0; animation: slideDrawRight 0.5s cubic-bezier(0.25,1,0.5,1) forwards; animation-delay: 0.9s; }
+.slide.active .anim-q-ll { opacity: 0; animation: expandQuadrant 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 1.4s; transform-origin: 265px 95px; }
+.slide.active .anim-q-hl { opacity: 0; animation: expandQuadrant 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 1.7s; transform-origin: 425px 95px; }
+.slide.active .anim-q-lh { opacity: 0; animation: expandQuadrant 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 2.0s; transform-origin: 265px 255px; }
+.slide.active .anim-q-hh { opacity: 0; animation: expandQuadrant 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 2.3s; transform-origin: 425px 255px; }
+
+/* Slide 9 (Lifting) & Slide 10 (Control) Sequence */
+.slide.active .seq-lift, .slide.active .seq-blk { opacity: 0; animation: popGlow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.slide.active .seq-arr, .slide.active .seq-barr { opacity: 0; animation: slideDrawRight 0.4s ease forwards; }
+
+/* Delays for Lifting Architecture (Slide 9) */
+.slide.active .lifting-diagram > :nth-child(1) { animation-delay: 0.3s; }
+.slide.active .lifting-diagram > :nth-child(2) { animation-delay: 0.7s; }
+.slide.active .lifting-diagram > :nth-child(3) { animation-delay: 1.0s; }
+.slide.active .lifting-diagram > :nth-child(4) { animation-delay: 1.4s; }
+.slide.active .lifting-diagram > :nth-child(5) { animation-delay: 1.7s; }
+.slide.active .lifting-diagram > :nth-child(6) { animation-delay: 2.1s; }
+.slide.active .lifting-diagram > :nth-child(7) { animation-delay: 2.4s; }
+.slide.active .lifting-diagram > :nth-child(8) { animation-delay: 2.8s; }
+.slide.active .lifting-diagram > :nth-child(9) { animation-delay: 3.1s; }
+
+/* Delays for Control Loop Block Diagram (Slide 10) */
+.slide.active .block-diagram > :nth-child(1) { animation-delay: 0.3s; }
+.slide.active .block-diagram > :nth-child(2) { animation-delay: 0.6s; }
+.slide.active .block-diagram > :nth-child(3) { animation-delay: 0.9s; }
+.slide.active .block-diagram > :nth-child(4) { animation-delay: 1.2s; }
+.slide.active .block-diagram > :nth-child(5) { animation-delay: 1.5s; }
+.slide.active .block-diagram > :nth-child(6) { animation-delay: 1.8s; }
+.slide.active .block-diagram > :nth-child(7) { animation-delay: 2.1s; }
+.slide.active .block-diagram > :nth-child(8) { animation-delay: 2.4s; }
+.slide.active .block-diagram > :nth-child(9) { animation-delay: 2.7s; }
+.slide.active .block-diagram > :nth-child(10) { animation-delay: 3.0s; }
+.slide.active .block-diagram > :nth-child(11) { animation-delay: 3.3s; }
+
+/* Slide 11 Sequence */
+.slide.active .seq-s11-left { opacity: 0; animation: popGlow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.3s; transform-origin: left center; }
+.slide.active .seq-s11-right { opacity: 0; animation: popGlow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; animation-delay: 0.7s; transform-origin: right center; }
+.slide.active .seq-s11-sw-box { opacity: 0; animation: popGlow 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.slide.active .seq-s11-sw-arr { opacity: 0; animation: slideDrawRight 0.4s ease forwards; }
+.slide.active .smart-switch-container > :nth-child(1) { animation-delay: 1.1s; }
+.slide.active .smart-switch-container > :nth-child(2) { animation-delay: 1.4s; }
+.slide.active .smart-switch-container > :nth-child(3) { animation-delay: 1.7s; }
+.slide.active .smart-switch-container > :nth-child(4) { animation-delay: 2.0s; }
+.slide.active .smart-switch-container > :nth-child(5) { animation-delay: 2.3s; }
+.slide.active .seq-s11-tags span { opacity: 0; animation: popGlow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.slide.active .seq-s11-tags span:nth-child(1) { animation-delay: 2.6s; }
+.slide.active .seq-s11-tags span:nth-child(2) { animation-delay: 2.8s; }
+.slide.active .seq-s11-tags span:nth-child(3) { animation-delay: 3.0s; }
+.slide.active .seq-s11-tags span:nth-child(4) { animation-delay: 3.2s; }
+/* ==================================================== */
+
+/* === SLIDE 1 HERO STYLES === */
+.hero-wrap{display:grid;grid-template-columns:1.1fr 1fr;gap:40px;align-items:center;width:100%;max-width:1180px;margin:0 auto;text-align:left}
+.hero-left{position:relative;z-index:3}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(255,255,255,0.85);border:1px solid rgba(124,58,237,0.25);border-radius:99px;font-size:0.72rem;font-weight:700;letter-spacing:1.5px;color:#7c3aed;text-transform:uppercase;backdrop-filter:blur(8px);box-shadow:0 2px 8px rgba(124,58,237,0.08)}
+.hero-eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:#db2777;box-shadow:0 0 0 0 rgba(219,39,119,0.6);animation:pulse 1.8s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(219,39,119,0.5)}70%{box-shadow:0 0 0 10px rgba(219,39,119,0)}100%{box-shadow:0 0 0 0 rgba(219,39,119,0)}}
+.hero-title{font-size:3.4rem;font-weight:800;line-height:1.05;letter-spacing:-1.5px;margin:18px 0 8px 0;background:linear-gradient(110deg,#0891b2 0%,#7c3aed 50%,#db2777 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-title .accent-line{display:block;height:4px;width:120px;margin-top:14px;border-radius:2px;background:linear-gradient(90deg,#0891b2,#7c3aed,#db2777);box-shadow:0 2px 8px rgba(124,58,237,0.35)}
+.hero-sub{font-size:1.05rem;color:#475569;font-weight:400;margin-top:14px;line-height:1.55;max-width:480px}
+.author-card{display:inline-flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:24px;padding:14px 20px;background:rgba(255,255,255,0.92);border:1px solid rgba(124,58,237,0.18);border-radius:14px;box-shadow:0 6px 20px rgba(15,23,42,0.06);backdrop-filter:blur(8px)}
+.author-card .ac-label{font-size:0.7rem;font-weight:700;letter-spacing:1.8px;color:#7c3aed;text-transform:uppercase}
+.author-card .ac-names{font-size:1.05rem;font-weight:700;color:#1e293b;line-height:1.4}
+.author-card .ac-school{font-size:0.78rem;color:#64748b;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-top:2px}
+.hero-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:18px}
+.date-badge{position:absolute;top:32px;right:32px;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(255,255,255,0.9);border:1px solid rgba(8,145,178,0.3);border-radius:99px;font-size:0.78rem;font-weight:700;color:#0e7490;letter-spacing:1px;backdrop-filter:blur(8px);box-shadow:0 4px 14px rgba(8,145,178,0.1);z-index:20}
+.date-badge svg{width:14px;height:14px}
+.scroll-hint{position:absolute;bottom:48px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:#64748b;font-size:0.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;z-index:20}
+.scroll-hint .chevron{width:22px;height:22px;animation:bounce 1.8s ease-in-out infinite}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:0.6}50%{transform:translateY(6px);opacity:1}}
+.hero-visual{position:relative;width:100%;height:520px;display:flex;align-items:center;justify-content:center}
+.hero-visual svg{width:100%;height:100%;max-width:600px}
+@keyframes pulse-soft{0%,100%{opacity:0.45}50%{opacity:0.95}}
+.pulse-soft{animation:pulse-soft 3.2s ease-in-out infinite;transform-origin:center}
+@keyframes spin-slow{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes spin-rev{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}
+@keyframes float-y{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.ring-spin{animation:spin-slow 28s linear infinite;transform-origin:center}
+.ring-rev{animation:spin-rev 22s linear infinite;transform-origin:center}
+.float-1{animation:float-y 4s ease-in-out infinite}
+.float-2{animation:float-y 5s ease-in-out infinite 0.5s}
+
+/* === SLIDE 3 SCENE CARDS === */
+.scenes-row{display:flex;gap:18px;justify-content:center;align-items:stretch;flex-wrap:wrap;margin:18px auto}
+.scene-card{flex:1;min-width:200px;max-width:240px;background:#ffffff;border-radius:14px;border:1px solid rgba(124,58,237,0.16);overflow:hidden;box-shadow:0 6px 22px rgba(15,23,42,0.07);display:flex;flex-direction:column}
+.scene-card .scene-canvas{position:relative;height:140px;background:#f1f5f9;border-bottom:1px solid rgba(124,58,237,0.1);overflow:hidden}
+.scene-card .scene-label{padding:10px 12px 4px;font-size:0.78rem;font-weight:700;color:#0e7490;letter-spacing:0.5px;text-align:center}
+.scene-card .scene-sublabel{padding:0 12px 8px;font-size:0.7rem;color:#64748b;text-align:center;font-style:italic}
+.scene-card .err-bar{height:6px;margin:0 12px 10px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.scene-card .err-bar > span{display:block;height:100%;border-radius:3px}
+.scene-card .err-tag{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px 12px 12px;font-size:0.74rem;font-weight:700}
+.result-arrow{display:flex;justify-content:center;margin:8px auto;color:#db2777}
+.result-box{margin:0 auto;max-width:560px;padding:14px 22px;background:linear-gradient(110deg,rgba(219,39,119,0.08),rgba(124,58,237,0.06));border:1.5px solid rgba(219,39,119,0.3);border-radius:12px;color:#1e293b;font-weight:600;font-size:0.98rem;box-shadow:0 4px 16px rgba(219,39,119,0.08);text-align:center}
+.result-box strong{color:#db2777}
+
+/* ===== NEW KEYFRAMES ===== */
+@keyframes drawPath {
+  from { stroke-dashoffset: var(--dash, 260); opacity: 0; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes softPulseFocus {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(8,145,178,0)); }
+  50% { transform: scale(1.06); filter: drop-shadow(0 0 12px rgba(8,145,178,0.35)); }
+}
+@keyframes floatInUp {
+  0% { opacity: 0; transform: translateY(26px) scale(0.92); }
+  70% { opacity: 1; transform: translateY(-4px) scale(1.03); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes sweepGlow {
+  0% { opacity: 0; transform: translateX(-40px) skewX(-18deg); }
+  25% { opacity: 0.85; }
+  100% { opacity: 0; transform: translateX(120px) skewX(-18deg); }
+}
+@keyframes fillBar {
+  from { width: 0; }
+  to { width: var(--target-width); }
+}
+@keyframes arrowDrop {
+  0% { opacity: 0; transform: translateY(-18px) scale(0.8); }
+  70% { opacity: 1; transform: translateY(4px) scale(1.08); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ===== SLIDE 2 : CREATIVE ROBOT ANIMATION ===== */
+@keyframes softCameraGlow {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(8,145,178,0.4)); }
+    50% { filter: drop-shadow(0 0 12px rgba(8,145,178,0.7)) drop-shadow(0 0 20px rgba(34,211,238,0.4)); }
+}
+@keyframes robotFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+@keyframes jointGlow1 {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(8,145,178,0.2)); }
+    50% { filter: drop-shadow(0 0 6px rgba(8,145,178,0.6)); }
+}
+@keyframes jointGlow2 {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(94,53,177,0.2)); }
+    50% { filter: drop-shadow(0 0 6px rgba(94,53,177,0.6)); }
+}
+@keyframes jointGlow3 {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(124,58,237,0.2)); }
+    50% { filter: drop-shadow(0 0 6px rgba(124,58,237,0.6)); }
+}
+@keyframes fovPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 0.85; }
+}
+
+/* Whole robot gently floats */
+.slide.active#slide-2 .gc-robot {
+    animation: robotFloat 6s ease-in-out infinite;
+}
+
+/* Camera lens glow pulse - the star of the animation */
+.slide.active#slide-2 .gc-camera {
+    animation: softCameraGlow 2.5s ease-in-out 0.5s infinite;
+}
+
+/* FOV triangle subtly pulses */
+.slide.active#slide-2 .gc-fov-line {
+    animation: fovPulse 3s ease-in-out 1s infinite;
+}
+
+/* Info cards - creative staggered entrance */
+@keyframes cardSlideUp {
+    0% { opacity: 0; transform: translateY(30px) scale(0.9); }
+    60% { opacity: 1; transform: translateY(-4px) scale(1.02); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes cardShine {
+    0% { box-shadow: 0 4px 20px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04); }
+    50% { box-shadow: 0 8px 30px rgba(124,58,237,0.12), 0 2px 8px rgba(8,145,178,0.08); }
+    100% { box-shadow: 0 4px 20px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04); }
+}
+.slide.active#slide-2 .gc-card {
+    opacity: 0;
+    animation: cardSlideUp 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards, cardShine 4s ease-in-out 2s infinite;
+}
+.slide.active#slide-2 .gc-card:nth-child(1) { animation-delay: 0.6s, 2.5s; }
+.slide.active#slide-2 .gc-card:nth-child(2) { animation-delay: 0.9s, 3s; }
+.slide.active#slide-2 .gc-card:nth-child(3) { animation-delay: 1.2s, 3.5s; }
+
+/* ===== SLIDE 3 : PROBLEM STATEMENT ===== */
+.slide.active#slide-3 .ps-card {
+  opacity: 0;
+  animation: floatInUp 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+.slide.active#slide-3 .ps-card:nth-child(1) { animation-delay: 0.3s; }
+.slide.active#slide-3 .ps-card:nth-child(2) { animation-delay: 0.75s; }
+.slide.active#slide-3 .ps-card:nth-child(3) { animation-delay: 1.2s; }
+.slide.active#slide-3 .ps-bar-fill {
+  width: 0 !important;
+  animation: fillBar 0.9s ease forwards;
+}
+.slide.active#slide-3 .ps-card:nth-child(1) .ps-bar-fill { animation-delay: 0.75s; }
+.slide.active#slide-3 .ps-card:nth-child(2) .ps-bar-fill { animation-delay: 1.2s; }
+.slide.active#slide-3 .ps-card:nth-child(3) .ps-bar-fill { animation-delay: 1.65s; }
+.slide.active#slide-3 .ps-glare-sweep {
+  opacity: 0;
+  animation: sweepGlow 1.1s ease forwards 1.55s;
+}
+.slide.active#slide-3 .ps-arrow {
+  opacity: 0;
+  animation: arrowDrop 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards 2.0s;
+}
+.slide.active#slide-3 .ps-result {
+  opacity: 0;
+  animation: popGlow 0.65s cubic-bezier(0.34,1.56,0.64,1) forwards 2.35s;
+}
+
+</style>
+</head>
+<body>
+<canvas id="canvas-bg"></canvas>
+<div id="progress-bar"></div>
+<div id="slide-counter">1 / 11</div>
+<div class="nav-hint">&#8592; &#8594; Arrow keys or click to navigate</div>
+
+<div class="slide active" id="slide-1">
+<div class="date-badge fade-item">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+DEFENSE 2025-2026
+</div>
+<div class="slide-content" style="max-width:1280px">
+<div class="hero-wrap">
+<div class="hero-left">
+<div class="fade-item"><span class="hero-eyebrow"><span class="pulse"></span>Engineering Thesis Defense</span></div>
+<h1 class="hero-title fade-item">Direct Visual<br>Servoing<br><span style="background:linear-gradient(110deg,#db2777,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">via Multiscale Decomposition</span><span class="accent-line"></span></h1>
+<p class="hero-sub fade-item">Robust photometric control through wavelet-based representations &mdash; bringing resilience to illumination drift and specular glare.</p>
+<div class="fade-item author-card">
+<span class="ac-label">Presented by</span>
+<span class="ac-names">ABBOU Ahmed Mohammed<br>KHEROUAA Alaa Eddine</span>
+<span class="ac-school">ESG2E Oran</span>
+</div>
+<div class="fade-item hero-tags">
+<span class="tag">Visual Servoing</span>
+<span class="tag">Wavelet Transform</span>
+<span class="tag">Robotics</span>
+<span class="tag">ViSP</span>
+</div>
+</div>
+
+<div class="fade-item hero-visual">
+<svg viewBox="0 0 600 560" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs>
+<radialGradient id="pupil-grad" cx="38%" cy="38%" r="75%"><stop offset="0%" stop-color="#67e8f9"/><stop offset="35%" stop-color="#0891b2"/><stop offset="80%" stop-color="#6d28d9"/><stop offset="100%" stop-color="#1e1b4b"/></radialGradient>
+<radialGradient id="lens-bg-grad" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#7c3aed" stop-opacity="0.0"/><stop offset="60%" stop-color="#0891b2" stop-opacity="0.18"/><stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/></radialGradient>
+<linearGradient id="iris-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#475569"/><stop offset="100%" stop-color="#0f172a"/></linearGradient>
+<pattern id="dot-grid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.1" fill="#1e293b" fill-opacity="0.06"/></pattern>
+<filter id="lens-glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<filter id="card-shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur in="SourceAlpha" stdDeviation="3.2"/><feOffset dx="0" dy="3" result="off"/><feComponentTransfer><feFuncA type="linear" slope="0.22"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="card3-clip"><rect x="42" y="120" width="72" height="72" rx="9"/></clipPath>
+</defs>
+<rect width="600" height="560" fill="url(#dot-grid)"/>
+<g transform="translate(300 280)">
+<g class="ring-spin"><circle r="172" fill="none" stroke="#0891b2" stroke-width="1" stroke-dasharray="3 9" opacity="0.45"/><circle cx="172" cy="0" r="3" fill="#0891b2" opacity="0.85"/><circle cx="-172" cy="0" r="2" fill="#0891b2" opacity="0.6"/></g>
+<g class="ring-rev"><circle r="152" fill="none" stroke="#7c3aed" stroke-width="1" stroke-dasharray="2 6" opacity="0.45"/><circle cx="0" cy="-152" r="2.5" fill="#7c3aed" opacity="0.85"/></g>
+<g class="ring-spin"><circle r="134" fill="none" stroke="#db2777" stroke-width="0.8" stroke-dasharray="1 5" opacity="0.4"/></g>
+<circle r="120" fill="url(#lens-bg-grad)" filter="url(#lens-glow)"/>
+<circle r="115" fill="#0f172a"/>
+<circle r="115" fill="none" stroke="#1e293b" stroke-width="3"/>
+<g fill="url(#iris-grad)" stroke="#0f172a" stroke-width="0.7">
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(0)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(45)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(90)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(135)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(180)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(225)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(270)"/>
+<path d="M -8 -48 L -38 -98 A 105 105 0 0 1 22 -103 L 8 -48 Z" transform="rotate(315)"/>
+</g>
+<circle r="52" fill="none" stroke="#0f172a" stroke-width="2.5"/>
+<circle r="50" fill="url(#pupil-grad)"/>
+<g opacity="0.55" stroke="#f8fafc">
+<rect x="-22" y="-22" width="44" height="44" fill="none" stroke-width="0.7"/>
+<line x1="0" y1="-22" x2="0" y2="22" stroke-width="0.7"/>
+<line x1="-22" y1="0" x2="22" y2="0" stroke-width="0.7"/>
+</g>
+<g fill="#f8fafc" font-family="Arial, sans-serif" font-weight="700" text-anchor="middle">
+<text x="-16.5" y="-14" font-size="3.5" opacity="0.85">LL</text>
+<text x="11" y="-7" font-size="6" opacity="0.85">HL</text>
+<text x="-11" y="17" font-size="6" opacity="0.85">LH</text>
+<text x="11" y="17" font-size="6" opacity="0.7">HH</text>
+</g>
+<ellipse cx="-18" cy="-22" rx="13" ry="7" fill="#f8fafc" opacity="0.45"/>
+<circle cx="-22" cy="-26" r="3.5" fill="#ffffff" opacity="0.9"/>
+</g>
+<g class="float-1" filter="url(#card-shadow)">
+<rect x="488" y="100" width="72" height="72" rx="9" fill="#ffffff" stroke="#0891b2" stroke-width="1.6"/>
+<g stroke="#0891b2" stroke-width="2.8" stroke-linecap="round" opacity="0.85"><line x1="498" y1="116" x2="550" y2="116"/><line x1="498" y1="128" x2="550" y2="128"/><line x1="498" y1="140" x2="550" y2="140"/><line x1="498" y1="152" x2="550" y2="152"/><line x1="498" y1="164" x2="550" y2="164"/></g>
+<text x="524" y="92" font-size="8" font-weight="700" fill="#0e7490" text-anchor="middle" letter-spacing="1">HL</text>
+</g>
+<g class="float-2" filter="url(#card-shadow)">
+<rect x="488" y="380" width="72" height="72" rx="9" fill="#ffffff" stroke="#7c3aed" stroke-width="1.6"/>
+<g stroke="#7c3aed" stroke-width="2.8" stroke-linecap="round" opacity="0.85"><line x1="500" y1="394" x2="500" y2="438"/><line x1="512" y1="394" x2="512" y2="438"/><line x1="524" y1="394" x2="524" y2="438"/><line x1="536" y1="394" x2="536" y2="438"/><line x1="548" y1="394" x2="548" y2="438"/></g>
+<text x="524" y="468" font-size="8" font-weight="700" fill="#6d28d9" text-anchor="middle" letter-spacing="1">LH</text>
+</g>
+<g class="float-1" filter="url(#card-shadow)">
+<rect x="42" y="120" width="72" height="72" rx="9" fill="#ffffff" stroke="#db2777" stroke-width="1.6"/>
+<g stroke="#db2777" stroke-width="2.4" stroke-linecap="round" opacity="0.8" clip-path="url(#card3-clip)"><line x1="32" y1="156" x2="124" y2="64"/><line x1="32" y1="174" x2="124" y2="82"/><line x1="32" y1="192" x2="124" y2="100"/></g>
+<text x="78" y="112" font-size="8" font-weight="700" fill="#be185d" text-anchor="middle" letter-spacing="1">HH</text>
+</g>
+</svg>
+</div>
+</div>
+</div>
+<div class="scroll-hint fade-item">
+<span>Click or press &rarr; to start</span>
+<svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+</div>
+</div>
+
+<div class="slide" id="slide-2">
+<div class="slide-content">
+<h2 class="fade-item">General Context</h2>
+<p class="desc fade-item" style="margin-bottom:24px">Computer vision enables robots to perceive and interact with their environment. Visual servoing closes the control loop using visual feedback.</p>
+<div class="diagram-box fade-item" style="max-width:780px">
+<svg width="100%" height="340" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="seg-grad-1" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#0891b2"/><stop offset="100%" stop-color="#0e7490"/></linearGradient>
+<linearGradient id="seg-grad-2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#1e88e5"/><stop offset="100%" stop-color="#1565c0"/></linearGradient>
+<linearGradient id="seg-grad-3" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#5e35b1"/><stop offset="100%" stop-color="#4527a0"/></linearGradient>
+<linearGradient id="seg-grad-4" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#6d28d9"/></linearGradient>
+<linearGradient id="floor-grad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#e2e8f0" stop-opacity="0.9"/><stop offset="100%" stop-color="#e2e8f0" stop-opacity="0"/></linearGradient>
+<linearGradient id="fov-grad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fef3c7" stop-opacity="0.85"/><stop offset="100%" stop-color="#fde68a" stop-opacity="0.05"/></linearGradient>
+<linearGradient id="target-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#059669"/></linearGradient>
+<filter id="soft-shadow"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="2" result="o"/><feComponentTransfer><feFuncA type="linear" slope="0.18"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+
+<g class="gc-robot">
+<!-- Floor shadow -->
+<ellipse cx="170" cy="298" rx="90" ry="9" fill="url(#floor-grad)"/>
+<!-- Base -->
+<rect x="120" y="270" width="100" height="22" rx="3" fill="#334155" filter="url(#soft-shadow)"/>
+<rect x="135" y="252" width="70" height="22" rx="3" fill="#475569"/>
+<text x="170" y="287" font-size="10" font-weight="700" fill="#f8fafc" text-anchor="middle">BASE</text>
+<!-- J1 -->
+<circle cx="170" cy="248" r="14" fill="url(#seg-grad-1)" filter="url(#soft-shadow)"/>
+<circle cx="170" cy="248" r="17" fill="none" stroke="#0891b2" stroke-width="1" opacity="0">
+<animate attributeName="r" values="14;20;14" dur="2.5s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0;0.6" dur="2.5s" repeatCount="indefinite"/>
+</circle>
+<circle cx="170" cy="248" r="6" fill="#0e7490"/>
+<text x="155" y="252" font-size="8" font-weight="700" fill="#0e7490" text-anchor="end">J1</text>
+<!-- Link 1 -->
+<g transform="rotate(-30 170 248)"><rect x="160" y="170" width="20" height="80" rx="5" fill="url(#seg-grad-2)" filter="url(#soft-shadow)"/></g>
+<!-- J2 -->
+<circle cx="130" cy="180" r="13" fill="url(#seg-grad-3)" filter="url(#soft-shadow)"/>
+<circle cx="130" cy="180" r="16" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0">
+<animate attributeName="r" values="13;19;13" dur="3s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.5;0;0.5" dur="3s" repeatCount="indefinite"/>
+</circle>
+<circle cx="130" cy="180" r="5" fill="#311b92"/>
+<text x="115" y="184" font-size="8" font-weight="700" fill="#4527a0" text-anchor="end">J2</text>
+<!-- Link 2 -->
+<g transform="rotate(35 130 180)"><rect x="120" y="105" width="20" height="80" rx="5" fill="url(#seg-grad-3)" filter="url(#soft-shadow)"/></g>
+<!-- J3 -->
+<circle cx="195" cy="135" r="11" fill="url(#seg-grad-4)" filter="url(#soft-shadow)"/>
+<circle cx="195" cy="135" r="14" fill="none" stroke="#db2777" stroke-width="1" opacity="0">
+<animate attributeName="r" values="11;17;11" dur="2.8s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.5;0;0.5" dur="2.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="195" cy="135" r="4" fill="#4c1d95"/>
+<text x="180" y="125" font-size="8" font-weight="700" fill="#6d28d9" text-anchor="end">J3</text>
+<!-- End-effector connector -->
+<rect x="206" y="124" width="22" height="22" rx="3" fill="#475569" filter="url(#soft-shadow)"/>
+<circle cx="232" cy="135" r="5" fill="#1e293b"/>
+<!-- Camera (gc-camera) -->
+<g transform="translate(258 135)" filter="url(#soft-shadow)" class="gc-camera">
+<rect x="-18" y="-16" width="46" height="32" rx="4" fill="#1e293b"/>
+<rect x="-14" y="-22" width="14" height="6" rx="1.5" fill="#334155"/>
+<circle cx="6" cy="0" r="14" fill="#0f172a" stroke="#0891b2" stroke-width="2"/>
+<circle cx="6" cy="0" r="9" fill="#0e7490"/>
+<circle cx="6" cy="0" r="5" fill="#0891b2"/>
+<circle cx="3" cy="-3" r="2" fill="#fef3c7" opacity="0.9"/>
+<circle cx="22" cy="-10" r="2.5" fill="#db2777"><animate attributeName="opacity" values="1;0.2;1" dur="1.4s" repeatCount="indefinite"/></circle>
+</g>
+<!-- FOV -->
+<polygon points="290,135 530,75 530,195" fill="url(#fov-grad)" opacity="0.7" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4 3" stroke-opacity="0.5" class="gc-fov-line" style="--dash:260;"/>
+<line x1="290" y1="135" x2="530" y2="135" stroke="#f59e0b" stroke-width="0.8" stroke-dasharray="2 4" opacity="0.5" class="gc-guide-line" style="--dash:240;"/>
+<!-- Target (gc-target) -->
+<g transform="translate(530 100)" class="gc-target">
+<polygon points="0,0 60,-15 90,5 30,20" fill="#10b981" opacity="0.85"/>
+<rect x="0" y="20" width="60" height="55" fill="url(#target-grad)"/>
+<polygon points="60,20 90,5 90,60 60,75" fill="#047857"/>
+</g>
+<!-- Labels -->
+<rect x="180" y="46" width="180" height="22" rx="11" fill="#ffffff" stroke="#0891b2" stroke-width="1" class="gc-cam-label"/>
+<text x="270" y="61" font-size="11" fill="#0e7490" font-weight="700" text-anchor="middle">End-effector camera (eye-in-hand)</text>
+<rect x="362" y="14" width="100" height="22" rx="11" fill="#ffffff" stroke="#f59e0b" stroke-width="1" class="gc-fov-label"/>
+<text x="412" y="29" font-size="11" fill="#b45309" font-weight="700" text-anchor="middle">Field of view</text>
+<rect x="525" y="222" width="100" height="22" rx="11" fill="#ffffff" stroke="#059669" stroke-width="1" class="gc-target-label"/>
+<text x="575" y="237" font-size="11" fill="#047857" font-weight="700" text-anchor="middle">Target scene</text>
+<!-- Feedback loop -->
+<path d="M 590 195 Q 660 240 600 295 Q 480 325 280 305 Q 200 300 175 296" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4" opacity="0.65" class="gc-loop-path" style="--dash:520;">
+<animate attributeName="stroke-dashoffset" values="0;-20" dur="1.5s" repeatCount="indefinite"/>
+</path>
+<polygon points="178,296 188,290 188,302" fill="#7c3aed" opacity="0.85"/>
+<rect x="365" y="305" width="180" height="22" rx="11" fill="#ffffff" stroke="#7c3aed" stroke-width="1"/>
+<text x="455" y="320" font-size="11" fill="#7c3aed" font-weight="700" text-anchor="middle">Visual feedback loop</text>
+<text x="170" y="324" font-size="9" fill="#64748b" text-anchor="middle" letter-spacing="1.5">6-DOF INDUSTRIAL ROBOT</text>
+</g>
+</svg>
+</div>
+<div class="cards-row fade-item">
+<div class="glow-card gc-card"><h4>Real-time Control</h4><p>Camera feedback at 25 FPS for closed-loop control</p></div>
+<div class="glow-card gc-card"><h4>Precision</h4><p>Sub-pixel accuracy through direct image information</p></div>
+<div class="glow-card gc-card"><h4>Flexibility</h4><p>No 3D model or geometric features required</p></div>
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-3">
+<div class="slide-content">
+<h2 class="fade-item">Problem Statement</h2>
+<p class="desc fade-item" style="margin-bottom:18px">Pure Photometric Visual Servoing (PVS) relies on the brightness constancy assumption, making it vulnerable to real-world illumination changes.</p>
+<div class="fade-item scenes-row">
+<div class="scene-card ps-card">
+<div class="scene-canvas">
+<svg width="100%" height="100%" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice">
+<rect width="200" height="140" fill="#f8fafc"/>
+<g><rect x="20" y="20" width="20" height="20" fill="#1e293b"/><rect x="60" y="20" width="20" height="20" fill="#1e293b"/><rect x="100" y="20" width="20" height="20" fill="#1e293b"/><rect x="140" y="20" width="20" height="20" fill="#1e293b"/><rect x="40" y="40" width="20" height="20" fill="#1e293b"/><rect x="80" y="40" width="20" height="20" fill="#1e293b"/><rect x="120" y="40" width="20" height="20" fill="#1e293b"/><rect x="20" y="60" width="20" height="20" fill="#1e293b"/><rect x="60" y="60" width="20" height="20" fill="#1e293b"/><rect x="100" y="60" width="20" height="20" fill="#1e293b"/><rect x="140" y="60" width="20" height="20" fill="#1e293b"/><rect x="40" y="80" width="20" height="20" fill="#1e293b"/><rect x="80" y="80" width="20" height="20" fill="#1e293b"/><rect x="120" y="80" width="20" height="20" fill="#1e293b"/></g>
+<rect x="18" y="18" width="164" height="104" fill="none" stroke="#0891b2" stroke-width="1.5" rx="2"/>
+</svg>
+</div>
+<div class="scene-label">Reference image I*</div>
+<div class="scene-sublabel">Normal illumination</div>
+<div class="err-bar"><span class="ps-bar-fill" style="--target-width:8%; width:8%; background:linear-gradient(90deg,#10b981,#059669)"></span></div>
+<div class="err-tag" style="color:#059669">&#10003; Photometric error: low</div>
+</div>
+<div class="scene-card ps-card">
+<div class="scene-canvas">
+<svg width="100%" height="100%" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice">
+<defs><linearGradient id="dark-overlay" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1e293b" stop-opacity="0.05"/><stop offset="100%" stop-color="#7c2d12" stop-opacity="0.55"/></linearGradient></defs>
+<rect width="200" height="140" fill="#fef3c7"/>
+<g opacity="0.85"><rect x="20" y="20" width="20" height="20" fill="#1e293b"/><rect x="60" y="20" width="20" height="20" fill="#1e293b"/><rect x="100" y="20" width="20" height="20" fill="#1e293b"/><rect x="140" y="20" width="20" height="20" fill="#1e293b"/><rect x="40" y="40" width="20" height="20" fill="#1e293b"/><rect x="80" y="40" width="20" height="20" fill="#1e293b"/><rect x="120" y="40" width="20" height="20" fill="#1e293b"/><rect x="20" y="60" width="20" height="20" fill="#1e293b"/><rect x="60" y="60" width="20" height="20" fill="#1e293b"/><rect x="100" y="60" width="20" height="20" fill="#1e293b"/><rect x="140" y="60" width="20" height="20" fill="#1e293b"/><rect x="40" y="80" width="20" height="20" fill="#1e293b"/><rect x="80" y="80" width="20" height="20" fill="#1e293b"/><rect x="120" y="80" width="20" height="20" fill="#1e293b"/></g>
+<rect x="18" y="18" width="164" height="104" fill="url(#dark-overlay)" rx="2"/>
+<rect x="18" y="18" width="164" height="104" fill="none" stroke="#d97706" stroke-width="1.5" rx="2"/>
+</svg>
+</div>
+<div class="scene-label">Illumination drift</div>
+<div class="scene-sublabel">Same scene, warmer/darker</div>
+<div class="err-bar"><span class="ps-bar-fill" style="--target-width:55%; width:55%; background:linear-gradient(90deg,#fbbf24,#d97706)"></span></div>
+<div class="err-tag" style="color:#b45309">&#9888; Photometric error: rising</div>
+</div>
+<div class="scene-card ps-card">
+<div class="scene-canvas">
+<svg width="100%" height="100%" viewBox="0 0 200 140" preserveAspectRatio="xMidYMid slice">
+<defs><radialGradient id="glare-blob" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffffff" stop-opacity="1"/><stop offset="40%" stop-color="#fef3c7" stop-opacity="0.85"/><stop offset="100%" stop-color="#fef3c7" stop-opacity="0"/></radialGradient></defs>
+<rect width="200" height="140" fill="#f8fafc"/>
+<g><rect x="20" y="20" width="20" height="20" fill="#1e293b"/><rect x="60" y="20" width="20" height="20" fill="#1e293b"/><rect x="100" y="20" width="20" height="20" fill="#1e293b"/><rect x="140" y="20" width="20" height="20" fill="#1e293b"/><rect x="40" y="40" width="20" height="20" fill="#1e293b"/><rect x="80" y="40" width="20" height="20" fill="#1e293b"/><rect x="120" y="40" width="20" height="20" fill="#1e293b"/><rect x="20" y="60" width="20" height="20" fill="#1e293b"/><rect x="60" y="60" width="20" height="20" fill="#1e293b"/><rect x="100" y="60" width="20" height="20" fill="#1e293b"/><rect x="140" y="60" width="20" height="20" fill="#1e293b"/><rect x="40" y="80" width="20" height="20" fill="#1e293b"/><rect x="80" y="80" width="20" height="20" fill="#1e293b"/><rect x="120" y="80" width="20" height="20" fill="#1e293b"/></g>
+<circle cx="105" cy="65" r="55" fill="url(#glare-blob)"/>
+<rect x="18" y="18" width="164" height="104" fill="none" stroke="#db2777" stroke-width="1.5" rx="2"/>
+</svg>
+<div class="ps-glare-sweep" style="position:absolute; inset:14px 30px; background:linear-gradient(110deg, transparent 20%, rgba(255,255,255,0.0) 35%, rgba(255,255,255,0.65) 50%, rgba(255,245,200,0.35) 58%, transparent 75%); pointer-events:none; border-radius:10px;"></div>
+</div>
+<div class="scene-label">Specular glare</div>
+<div class="scene-sublabel">Bright reflection on lens</div>
+<div class="err-bar"><span class="ps-bar-fill" style="--target-width:95%; width:95%; background:linear-gradient(90deg,#f43f5e,#db2777)"></span></div>
+<div class="err-tag" style="color:#be185d">&#10007; Photometric error: explodes</div>
+</div>
+</div>
+<div class="fade-item result-arrow ps-arrow">
+<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+</div>
+<div class="fade-item result-box ps-result">
+<strong>PVS error explodes &rarr;</strong> the control law diverges and the robot fails to converge on the target.
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-4">
+<div class="slide-content">
+<h2 class="fade-item">Objectives &amp; Contributions</h2>
+<div style="max-width:840px;margin:0 auto">
+<div class="icon-bullet fade-item"><div class="icon">&#9670;</div><div class="text"><strong>Multiscale Decomposition:</strong> Improve robustness by separating illumination (low-frequency) from structural details (high-frequency)</div></div>
+<div class="icon-bullet fade-item"><div class="icon">&#9674;</div><div class="text"><strong>DWT-PVS:</strong> Propose visual servoing in the Discrete Wavelet Transform domain for robust control under lighting changes</div></div>
+<div class="icon-bullet fade-item"><div class="icon">&#9656;</div><div class="text"><strong>LWT-PVS:</strong> Computationally optimized variant using the Lifting Wavelet Transform &mdash; avoids complex multiplications for real-time performance</div></div>
+<div class="icon-bullet fade-item"><div class="icon">&#8635;</div><div class="text"><strong>Smart Switch (Coarse-to-Fine):</strong> Dynamic strategy that starts with coarse approximation for convergence then switches to fine details for precision</div></div>
+<div class="icon-bullet fade-item"><div class="icon">&#9733;</div><div class="text"><strong>Validation:</strong> Simulation under ViSP framework with glare attacks and variable illumination scenarios</div></div>
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-5">
+<div class="slide-content">
+<h2 class="fade-item">Visual Servoing Concepts</h2>
+<p class="desc fade-item" style="margin-bottom:20px">Three major paradigms in visual servoing for robotic control.</p>
+<table class="comparison-table seq-s5-table">
+<thead><tr><th>Approach</th><th>Features Used</th><th>Advantages</th><th>Limitations</th></tr></thead>
+<tbody>
+<tr><td style="color:#0891b2;font-weight:700">IBVS</td><td>Image features (points, lines)</td><td>No 3D model needed</td><td>Local minima, feature extraction cost</td></tr>
+<tr><td style="color:#7c3aed;font-weight:700">PBVS</td><td>3D pose estimation</td><td>Decoupled control</td><td>Requires accurate 3D model</td></tr>
+<tr><td style="color:#059669;font-weight:700">PVS (Direct)</td><td>Raw pixel intensities</td><td>No feature extraction needed</td><td>Sensitive to illumination</td></tr>
+</tbody>
+</table>
+<div class="highlight-box seq-s5-box">
+<h3 style="color:#0e7490;margin-bottom:8px">Direct Photometric Visual Servoing (PVS)</h3>
+<p style="font-size:0.95rem;color:#475569">Uses the entire image as a feature vector. The error signal is computed directly from pixel intensity differences between the current and desired images.</p>
+</div>
+<div class="equation seq-s5-eq"><strong>e</strong>(t) = <strong>I</strong>(t) - <strong>I</strong>* &nbsp;&nbsp;|&nbsp;&nbsp; <strong>v</strong> = -&lambda; <strong>L</strong><sub>I</sub><sup>+</sup> (<strong>I</strong> - <strong>I</strong>*)</div>
+</div>
+</div>
+
+<div class="slide" id="slide-6">
+<div class="slide-content">
+<h2 class="fade-item">Fourier Transform: Continuous &amp; Discrete</h2>
+<p class="desc fade-item" style="margin-bottom:22px"><em>The mathematical foundation for analyzing signals in the frequency domain.</em></p>
+<div class="cards-row fade-item" style="align-items:stretch;margin-top:6px">
+<div class="highlight-box" style="flex:1;min-width:340px;max-width:520px;margin:8px;text-align:left">
+<h3 style="color:#0e7490;margin-bottom:10px;text-align:center">Continuous Fourier Transform (CFT)</h3>
+<div class="equation" style="margin:8px auto;font-size:0.95rem;text-align:center"><em>F</em>(&omega;) = &int;<sub>&minus;&infin;</sub><sup>+&infin;</sup> <em>f</em>(<em>t</em>) &middot; <em>e</em><sup>&minus;<em>j&omega;t</em></sup> d<em>t</em></div>
+<p style="font-size:0.9rem;color:#475569;margin-top:10px;line-height:1.5;text-align:center">Decomposes a continuous signal into an infinite spectrum of complex sinusoids.</p>
+</div>
+<div class="highlight-box" style="flex:1;min-width:340px;max-width:520px;margin:8px;text-align:left">
+<h3 style="color:#7c3aed;margin-bottom:10px;text-align:center">Discrete Fourier Transform (DFT)</h3>
+<div class="equation" style="margin:8px auto;font-size:0.95rem;text-align:center"><em>X</em>[<em>k</em>] = &Sigma;<sub><em>n</em>=0</sub><sup><em>N</em>&minus;1</sup> <em>x</em>[<em>n</em>] &middot; <em>e</em><sup>&minus;<em>j</em>2&pi;<em>kn</em>/<em>N</em></sup></div>
+<p style="font-size:0.9rem;color:#475569;margin-top:10px;line-height:1.5;text-align:center">Sampled version for discrete signals &mdash; computed efficiently via the FFT.</p>
+</div>
+</div>
+<div class="cards-row fade-item" style="margin-top:14px">
+<div class="glow-card" style="max-width:280px"><h4>CFT</h4><p>Continuous t and &omega;, theoretical framework</p></div>
+<div class="glow-card" style="max-width:280px"><h4>DFT</h4><p>Finite samples, practical for digital image processing</p></div>
+<div class="glow-card" style="max-width:280px"><h4>Shared Limitation</h4><p>No spatial-temporal localization of frequency content</p></div>
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-7">
+<div class="slide-content">
+<h2 class="fade-item">Frequency Analysis &amp; Its Limits</h2>
+<p class="desc fade-item" style="margin-bottom:24px">The Fourier Transform provides global frequency content but loses all spatial localization.</p>
+<div class="diagram-box fade-item">
+<div style="display:flex;justify-content:center;gap:40px;align-items:center;flex-wrap:wrap">
+<div class="stagger-box" style="text-align:center">
+<svg width="200" height="120" viewBox="0 0 200 120"><text x="100" y="15" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">Time Domain Signal</text><line x1="20" y1="70" x2="180" y2="70" stroke="#cbd5e1" stroke-width="1"/><path d="M20,70 Q40,30 60,70 Q80,110 100,70 Q120,30 140,70 Q160,110 180,70" fill="none" stroke="#0891b2" stroke-width="2.2"/><text x="100" y="110" fill="#64748b" font-size="9" text-anchor="middle">Position information preserved</text></svg>
+</div>
+<div class="stagger-box" style="text-align:center">
+<svg width="200" height="120" viewBox="0 0 200 120"><text x="100" y="15" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">Fourier Transform</text><line x1="20" y1="90" x2="180" y2="90" stroke="#cbd5e1" stroke-width="1"/><rect x="40" y="50" width="12" height="40" fill="#7c3aed" opacity="0.65" rx="2"/><rect x="70" y="30" width="12" height="60" fill="#7c3aed" opacity="0.85" rx="2"/><rect x="100" y="60" width="12" height="30" fill="#7c3aed" opacity="0.55" rx="2"/><rect x="130" y="45" width="12" height="45" fill="#7c3aed" opacity="0.75" rx="2"/><rect x="160" y="70" width="12" height="20" fill="#7c3aed" opacity="0.45" rx="2"/><text x="100" y="110" fill="#be185d" font-size="9" font-weight="700" text-anchor="middle">Spatial localization LOST</text></svg>
+</div>
+<div class="stagger-box" style="text-align:center">
+<svg width="200" height="120" viewBox="0 0 200 120"><text x="100" y="15" fill="#475569" font-size="10" font-weight="700" text-anchor="middle">Wavelet Transform</text><rect x="20" y="30" width="40" height="30" fill="#0891b2" opacity="0.35" stroke="#0891b2" stroke-width="0.8" rx="2"/><rect x="70" y="35" width="40" height="25" fill="#0891b2" opacity="0.55" stroke="#0891b2" stroke-width="0.8" rx="2"/><rect x="120" y="25" width="40" height="35" fill="#0891b2" opacity="0.75" stroke="#0891b2" stroke-width="0.8" rx="2"/><rect x="20" y="70" width="40" height="20" fill="#7c3aed" opacity="0.35" stroke="#7c3aed" stroke-width="0.8" rx="2"/><rect x="70" y="65" width="40" height="30" fill="#7c3aed" opacity="0.55" stroke="#7c3aed" stroke-width="0.8" rx="2"/><rect x="120" y="68" width="40" height="25" fill="#7c3aed" opacity="0.75" stroke="#7c3aed" stroke-width="0.8" rx="2"/><text x="100" y="110" fill="#059669" font-size="9" font-weight="700" text-anchor="middle">Time + Frequency preserved</text></svg>
+</div>
+</div>
+</div>
+<div class="cards-row fade-item">
+<div class="glow-card"><h4>Fourier Limitation</h4><p>Cannot localize where a frequency component exists in space</p></div>
+<div class="glow-card"><h4>Need for Wavelets</h4><p>Multi-resolution analysis provides both spatial and frequency information</p></div>
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-8">
+<div class="slide-content">
+<h2 class="fade-item">Wavelet Transforms: DWT &amp; CWT</h2>
+<p class="desc fade-item" style="margin-bottom:16px">Wavelet transforms provide multi-resolution analysis with both spatial and frequency localization.</p>
+<div class="cards-row fade-item" style="max-width:880px;margin:0 auto">
+<div class="glow-card"><h4>DWT (Discrete Wavelet Transform)</h4><p>Separates global trends from structural details. Produces 4 sub-bands: LL, LH, HL, HH</p></div>
+<div class="glow-card"><h4>CWT (Continuous Wavelet Transform)</h4><p>Continuous version with redundant representation &mdash; high computational cost</p></div>
+</div>
+<div class="diagram-box fade-item" style="max-width:780px;padding:16px 22px;margin-top:16px">
+<svg viewBox="0 0 520 350" width="100%" style="max-height:300px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="dwt-input-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#475569"/></linearGradient>
+<linearGradient id="dwt-ll-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0891b2" stop-opacity="0.06"/><stop offset="100%" stop-color="#0891b2" stop-opacity="0.22"/></linearGradient>
+<pattern id="dwt-hl-pattern" width="12" height="12" patternUnits="userSpaceOnUse"><line x1="0" y1="3" x2="12" y2="3" stroke="#7c3aed" stroke-width="1.2" opacity="0.55"/><line x1="0" y1="7" x2="12" y2="7" stroke="#7c3aed" stroke-width="1.2" opacity="0.55"/><line x1="0" y1="11" x2="12" y2="11" stroke="#7c3aed" stroke-width="1.2" opacity="0.55"/></pattern>
+<pattern id="dwt-lh-pattern" width="12" height="12" patternUnits="userSpaceOnUse"><line x1="3" y1="0" x2="3" y2="12" stroke="#d97706" stroke-width="1.2" opacity="0.6"/><line x1="7" y1="0" x2="7" y2="12" stroke="#d97706" stroke-width="1.2" opacity="0.6"/><line x1="11" y1="0" x2="11" y2="12" stroke="#d97706" stroke-width="1.2" opacity="0.6"/></pattern>
+<pattern id="dwt-hh-pattern" width="10" height="10" patternUnits="userSpaceOnUse"><line x1="-2" y1="2" x2="12" y2="-12" stroke="#db2777" stroke-width="1.1" opacity="0.55"/><line x1="-2" y1="12" x2="12" y2="-2" stroke="#db2777" stroke-width="1.1" opacity="0.55"/></pattern>
+</defs>
+<g class="anim-dwt-in"><rect x="20" y="125" width="100" height="100" fill="url(#dwt-input-grad)" stroke="#94a3b8" stroke-width="1.5" rx="3"/><text x="70" y="190" font-size="56" font-family="Georgia,serif" font-weight="700" fill="#1e293b" opacity="0.45" text-anchor="middle">I</text><text x="70" y="245" font-size="11" fill="#64748b" font-weight="600" text-anchor="middle">Input image I</text></g>
+<g class="anim-dwt-arr"><line x1="135" y1="175" x2="172" y2="175" stroke="#7c3aed" stroke-width="2.5" stroke-linecap="round"/><polygon points="178,175 168,170 168,180" fill="#7c3aed"/></g>
+<rect x="185" y="15" width="320" height="320" fill="none" stroke="#1e293b" stroke-width="1.5"/>
+<line x1="345" y1="15" x2="345" y2="335" stroke="#1e293b" stroke-width="1.5"/>
+<line x1="185" y1="175" x2="505" y2="175" stroke="#1e293b" stroke-width="1.5"/>
+<g class="anim-q-ll"><rect x="185" y="15" width="160" height="160" fill="rgba(8,145,178,0.18)"/><rect x="185" y="15" width="160" height="160" fill="url(#dwt-ll-grad)"/><text x="195" y="38" font-size="18" font-weight="800" fill="#0e7490">LL</text><text x="195" y="54" font-size="11" font-style="italic" fill="#0e7490">Approximation</text></g>
+<g class="anim-q-hl"><rect x="345" y="15" width="160" height="160" fill="rgba(124,58,237,0.18)"/><rect x="345" y="15" width="160" height="160" fill="url(#dwt-hl-pattern)"/><text x="355" y="38" font-size="18" font-weight="800" fill="#7c3aed">HL</text><text x="355" y="54" font-size="11" font-style="italic" fill="#7c3aed">Horizontal</text></g>
+<g class="anim-q-lh"><rect x="185" y="175" width="160" height="160" fill="rgba(217,119,6,0.18)"/><rect x="185" y="175" width="160" height="160" fill="url(#dwt-lh-pattern)"/><text x="195" y="198" font-size="18" font-weight="800" fill="#b45309">LH</text><text x="195" y="214" font-size="11" font-style="italic" fill="#b45309">Vertical</text></g>
+<g class="anim-q-hh"><rect x="345" y="175" width="160" height="160" fill="rgba(219,39,119,0.18)"/><rect x="345" y="175" width="160" height="160" fill="url(#dwt-hh-pattern)"/><text x="355" y="198" font-size="18" font-weight="800" fill="#be185d">HH</text><text x="355" y="214" font-size="11" font-style="italic" fill="#be185d">Diagonal</text></g>
+</svg>
+<p style="text-align:center;font-size:0.85rem;color:#64748b;margin-top:8px;font-style:italic">2D DWT decomposition: one approximation (LL) + three detail sub-bands (LH, HL, HH).</p>
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-9">
+<div class="slide-content">
+<h2 class="fade-item">Lifting Wavelet Transform (LWT)</h2>
+<p class="desc fade-item" style="margin-bottom:14px">An optimized variant of the DWT designed for real-time computation through in-place lifting steps.</p>
+<div class="highlight-box fade-item" style="max-width:820px;padding:14px 22px;margin:0 auto">
+<h4 style="color:#0e7490;font-size:1.05rem;font-weight:700;margin-bottom:6px">LWT (Lifting Wavelet Transform)</h4>
+<p style="font-size:0.95rem;color:#475569;margin:0;line-height:1.55">Spatial optimization via in-place computation. No complex multiplications required, only additions and shifts. Ideal for embedded real-time systems.</p>
+</div>
+<h3 class="fade-item" style="margin-top:18px;color:#0e7490">Lifting Scheme Architecture</h3>
+<div class="diagram-box fade-item" style="padding:14px 22px;margin:10px auto">
+<div class="lifting-diagram" style="margin:0 auto;padding:6px">
+<div class="lift-step seq-lift"><div class="step-title">Input Signal</div><div class="step-desc">x[n]</div></div>
+<div class="arrow-right seq-arr">&#8594;</div>
+<div class="lift-step seq-lift" style="border-color:rgba(5,150,105,0.4)"><div class="step-title" style="color:#059669">Split</div><div class="step-desc">Even/Odd separation<br>x<sub>e</sub>, x<sub>o</sub></div></div>
+<div class="arrow-right seq-arr">&#8594;</div>
+<div class="lift-step seq-lift" style="border-color:rgba(217,119,6,0.4)"><div class="step-title" style="color:#d97706">Predict</div><div class="step-desc">d[n] = x<sub>o</sub> - P(x<sub>e</sub>)<br>Detail coefficients</div></div>
+<div class="arrow-right seq-arr">&#8594;</div>
+<div class="lift-step seq-lift" style="border-color:rgba(124,58,237,0.4)"><div class="step-title" style="color:#7c3aed">Update</div><div class="step-desc">s[n] = x<sub>e</sub> + U(d)<br>Approximation coefficients</div></div>
+<div class="arrow-right seq-arr">&#8594;</div>
+<div class="lift-step seq-lift"><div class="step-title">Output</div><div class="step-desc">s[n], d[n]</div></div>
+</div>
+</div>
+<p class="fade-item" style="font-size:0.95rem;color:#475569;margin-top:10px">LWT advantage: operates in-place with simple additions and shifts &mdash; ideal for embedded real-time systems.</p>
+<div class="cards-row fade-item" style="max-width:780px;margin:14px auto 0">
+<div class="glow-card" style="padding:14px 18px"><h4>DWT computational cost</h4><p style="font-size:0.9rem">O(N) with multiplications</p></div>
+<div class="glow-card" style="padding:14px 18px"><h4>LWT computational cost</h4><p style="font-size:0.9rem">O(N) with only adds/shifts (~50% faster)</p></div>
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-10">
+<div class="slide-content">
+<h2 class="fade-item" style="margin-bottom:10px">Mathematical Modeling and Control Loop</h2>
+<p class="desc fade-item" style="margin-bottom:14px;font-size:0.95rem">From the wavelet-based error formulation to the closed-loop implementation under the ViSP framework (25 FPS).</p>
+<div class="diagram-box fade-item" style="padding:14px 22px;margin:0 auto 14px">
+<h3 style="color:#475569;margin-bottom:8px;font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase">Control Loop Block Diagram</h3>
+<div class="block-diagram" style="margin:6px auto;padding:4px">
+<div class="block seq-blk" style="border-color:rgba(5,150,105,0.5);color:#047857">I* (Desired<br>Image)</div>
+<div class="block-arrow seq-barr">&#8594;</div>
+<div class="block seq-blk" style="border-color:rgba(217,119,6,0.5);color:#b45309">Wavelet<br>Decomposition<br>(DWT/LWT)</div>
+<div class="block-arrow seq-barr">&#8594;</div>
+<div class="block seq-blk" style="border-color:rgba(8,145,178,0.5);color:#0e7490">Error<br>Computation<br>e<sub>w</sub></div>
+<div class="block-arrow seq-barr">&#8594;</div>
+<div class="block seq-blk" style="border-color:rgba(124,58,237,0.5);color:#6d28d9">Control Law<br>v = -&lambda;L<sup>+</sup>e</div>
+<div class="block-arrow seq-barr">&#8594;</div>
+<div class="block seq-blk" style="border-color:rgba(219,39,119,0.5);color:#be185d">Velocity<br>Saturation</div>
+<div class="block-arrow seq-barr">&#8594;</div>
+<div class="block seq-blk" style="border-color:rgba(5,150,105,0.5);color:#047857">Robot<br>(Camera)</div>
+</div>
+<div style="text-align:center;margin-top:6px;color:#64748b;font-size:0.78rem">&#8592; Visual feedback loop at 25 FPS &#8592;</div>
+</div>
+<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch;justify-content:center">
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#0e7490;margin-bottom:10px;text-align:center;font-size:1.1rem">DWT-PVS</h3>
+<div style="margin-bottom:10px"><div style="color:#0e7490;font-weight:700;font-size:0.86rem;margin-bottom:4px">A. Wavelet Error</div><div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">e<sub>w</sub> = W(I) &minus; W(I*)</div></div>
+<div><div style="color:#0e7490;font-weight:700;font-size:0.86rem;margin-bottom:4px">B. Wavelet Interaction Matrix</div><div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">L<sub>w</sub> = W &middot; L<sub>I</sub></div></div>
+</div>
+<div class="highlight-box fade-item" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#7c3aed;margin-bottom:10px;text-align:center;font-size:1.1rem">LWT-PVS</h3>
+<div style="margin-bottom:10px"><div style="color:#7c3aed;font-weight:700;font-size:0.86rem;margin-bottom:4px">A. LWT Error</div><div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">e<sub>LWT</sub> = W<sub>L</sub> &middot; (I &minus; I*)</div></div>
+<div><div style="color:#7c3aed;font-weight:700;font-size:0.86rem;margin-bottom:4px">B. LWT Interaction Matrix</div><div class="equation" style="margin:4px 0;padding:6px 12px;font-size:0.92rem;text-align:center">L<sub>LWT</sub> = W<sub>L</sub> &middot; L<sub>I</sub></div></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="slide" id="slide-11">
+<div class="slide-content">
+<h2 class="fade-item" style="margin-bottom:10px">Control Strategies: Switching &amp; Smart Switch</h2>
+<p class="desc fade-item" style="margin-bottom:14px;font-size:0.95rem">Two complementary control laws drive the system: a switching mechanism for DWT-PVS and an optimal coarse-to-fine strategy for LWT-PVS.</p>
+<div style="display:flex;gap:18px;flex-wrap:wrap;align-items:stretch;justify-content:center;margin-bottom:14px">
+<div class="highlight-box seq-s11-left" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#0e7490;margin-bottom:8px;text-align:center;font-size:1.05rem">DWT-PVS Switching Control Law</h3>
+<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.86rem;text-align:left">
+<div style="display:flex;align-items:center;gap:10px"><div style="font-size:2.6em;font-weight:300;line-height:0.9;color:#0e7490">{</div><div style="display:flex;flex-direction:column;gap:6px;flex:1"><div>v<sub>c</sub> = &minus;&lambda; &middot; L&#770;<sub>w,coarse</sub><sup>+</sup> &middot; e<sub>w,coarse</sub> &nbsp;if ||e|| &gt; &epsilon;</div><div>v<sub>c</sub> = &minus;&lambda; &middot; L&#770;<sub>w,fine</sub><sup>+</sup> &middot; e<sub>w,fine</sub> &nbsp;if ||e|| &le; &epsilon;</div></div></div>
+</div>
+</div>
+<div class="highlight-box seq-s11-right" style="flex:1;min-width:380px;padding:14px 18px;margin:0;text-align:left">
+<h3 style="color:#7c3aed;margin-bottom:8px;text-align:center;font-size:1.05rem">LWT-PVS Optimal Control Law</h3>
+<div class="equation" style="margin:4px 0;padding:10px 14px;font-size:0.86rem;text-align:left">
+<div style="display:flex;align-items:center;gap:10px"><div style="font-size:2.6em;font-weight:300;line-height:0.9;color:#7c3aed">{</div><div style="display:flex;flex-direction:column;gap:6px;flex:1"><div>v<sub>c</sub> = &minus;&lambda; &middot; L&#770;<sub>LWT,coarse</sub><sup>+</sup> &middot; e<sub>LWT,coarse</sub> &nbsp;if ||e|| &gt; &epsilon;</div><div>v<sub>c</sub> = &minus;&lambda; &middot; L&#770;<sub>LWT,fine</sub><sup>+</sup> &middot; e<sub>LWT,fine</sub> &nbsp;if ||e|| &le; &epsilon;</div></div></div>
+</div>
+</div>
+</div>
+<div class="highlight-box fade-item" style="padding:14px 20px;margin:0 auto">
+<h3 style="color:#d97706;margin-bottom:10px;font-size:1.05rem">Smart Switch: Coarse-to-Fine Strategy</h3>
+<div class="smart-switch-container" style="display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap">
+<div class="seq-s11-sw-box" style="text-align:center;padding:10px 18px;background:rgba(8,145,178,0.08);border-radius:10px;border:1px solid rgba(8,145,178,0.3)"><div style="color:#0e7490;font-weight:700;font-size:0.92rem">Phase 1: Coarse</div><div style="color:#475569;font-size:0.82rem;margin-top:4px">LL sub-band (approximation)</div><div style="color:#64748b;font-size:0.74rem;margin-top:2px">Large convergence basin</div></div>
+<div class="seq-s11-sw-arr" style="color:#d97706;font-size:1.4rem;font-weight:bold">&#8594;</div>
+<div class="seq-s11-sw-box" style="text-align:center;padding:10px 18px;background:rgba(124,58,237,0.08);border-radius:10px;border:1px solid rgba(124,58,237,0.3)"><div style="color:#7c3aed;font-weight:700;font-size:0.92rem">Switch Trigger</div><div style="color:#475569;font-size:0.82rem;margin-top:4px">||e<sub>LL</sub>|| &lt; threshold</div><div style="color:#64748b;font-size:0.74rem;margin-top:2px">Error convergence detected</div></div>
+<div class="seq-s11-sw-arr" style="color:#d97706;font-size:1.4rem;font-weight:bold">&#8594;</div>
+<div class="seq-s11-sw-box" style="text-align:center;padding:10px 18px;background:rgba(5,150,105,0.08);border-radius:10px;border:1px solid rgba(5,150,105,0.3)"><div style="color:#059669;font-weight:700;font-size:0.92rem">Phase 2: Fine</div><div style="color:#475569;font-size:0.82rem;margin-top:4px">LH+HL+HH (details)</div><div style="color:#64748b;font-size:0.74rem;margin-top:2px">High positioning accuracy</div></div>
+</div>
+</div>
+<div class="seq-s11-tags" style="margin-top:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+<span class="tag">Velocity Saturation</span>
+<span class="tag">Robot Safety</span>
+<span class="tag">Real-time 25 FPS</span>
+<span class="tag">ViSP Framework</span>
+</div>
+</div>
+</div>
+
+<script>
+(function(){
+const canvas=document.getElementById('canvas-bg');
+const ctx=canvas.getContext('2d');
+let particles=[];
+let w,h;
+function resize(){w=canvas.width=window.innerWidth;h=canvas.height=window.innerHeight}
+window.addEventListener('resize',resize);
+resize();
+const palette=['8,145,178','124,58,237','219,39,119'];
+function createParticles(){
+particles=[];
+const count=Math.floor((w*h)/16000);
+for(let i=0;i<count;i++){
+particles.push({x:Math.random()*w,y:Math.random()*h,vx:(Math.random()-0.5)*0.25,vy:(Math.random()-0.5)*0.25,r:Math.random()*1.4+0.4,alpha:Math.random()*0.18+0.05,color:palette[Math.floor(Math.random()*palette.length)]});
+}}
+createParticles();
+function drawParticles(){
+ctx.clearRect(0,0,w,h);
+for(let i=0;i<particles.length;i++){
+const p=particles[i];
+p.x+=p.vx;p.y+=p.vy;
+if(p.x<0)p.x=w;if(p.x>w)p.x=0;
+if(p.y<0)p.y=h;if(p.y>h)p.y=0;
+ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+ctx.fillStyle='rgba('+p.color+','+p.alpha+')';ctx.fill();
+}
+for(let i=0;i<particles.length;i++){
+for(let j=i+1;j<particles.length;j++){
+const dx=particles[i].x-particles[j].x;
+const dy=particles[i].y-particles[j].y;
+const dist=Math.sqrt(dx*dx+dy*dy);
+if(dist<110){ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.strokeStyle='rgba(124,58,237,'+(0.04*(1-dist/110))+')';ctx.lineWidth=0.5;ctx.stroke();}
+}}
+requestAnimationFrame(drawParticles);
+}
+drawParticles();
+
+let current=0;
+const slides=document.querySelectorAll('.slide');
+const total=slides.length;
+const progressBar=document.getElementById('progress-bar');
+const counter=document.getElementById('slide-counter');
+
+function updateSlide(){
+slides.forEach((s,i)=>{
+s.classList.remove('active','past');
+if(i===current)s.classList.add('active');
+else if(i<current)s.classList.add('past');
+});
+progressBar.style.width=((current+1)/total*100)+'%';
+counter.textContent=(current+1)+' / '+total;
+}
+function next(){if(current<total-1){current++;updateSlide()}}
+function prev(){if(current>0){current--;updateSlide()}}
+document.addEventListener('keydown',function(e){
+if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next()}
+if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev()}
+});
+document.addEventListener('click',function(e){
+const x=e.clientX;
+if(x>w/2)next();else prev();
+});
+let touchStartX=0;
+document.addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX});
+document.addEventListener('touchend',function(e){
+const diff=e.changedTouches[0].clientX-touchStartX;
+if(Math.abs(diff)>50){if(diff<0)next();else prev()}
+});
+updateSlide();
+})();
+</script>
+</body>
+</html>
