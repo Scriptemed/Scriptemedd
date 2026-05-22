@@ -232,15 +232,45 @@ p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ===== SLIDE 2 : SIMPLE CLEAN ROBOT ANIMATION ===== */
+/* ===== SLIDE 2 : CREATIVE ROBOT ANIMATION ===== */
 @keyframes softCameraGlow {
-    0%, 100% { filter: drop-shadow(0 0 2px rgba(8,145,178,0.3)); }
-    50% { filter: drop-shadow(0 0 8px rgba(8,145,178,0.6)) drop-shadow(0 0 16px rgba(34,211,238,0.3)); }
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(8,145,178,0.4)); }
+    50% { filter: drop-shadow(0 0 12px rgba(8,145,178,0.7)) drop-shadow(0 0 20px rgba(34,211,238,0.4)); }
+}
+@keyframes robotFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+@keyframes jointGlow1 {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(8,145,178,0.2)); }
+    50% { filter: drop-shadow(0 0 6px rgba(8,145,178,0.6)); }
+}
+@keyframes jointGlow2 {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(94,53,177,0.2)); }
+    50% { filter: drop-shadow(0 0 6px rgba(94,53,177,0.6)); }
+}
+@keyframes jointGlow3 {
+    0%, 100% { filter: drop-shadow(0 0 2px rgba(124,58,237,0.2)); }
+    50% { filter: drop-shadow(0 0 6px rgba(124,58,237,0.6)); }
+}
+@keyframes fovPulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 0.85; }
 }
 
-/* Camera lens subtle glow pulse */
+/* Whole robot gently floats */
+.slide.active#slide-2 .gc-robot {
+    animation: robotFloat 6s ease-in-out infinite;
+}
+
+/* Camera lens glow pulse - the star of the animation */
 .slide.active#slide-2 .gc-camera {
-    animation: softCameraGlow 3s ease-in-out 1s infinite;
+    animation: softCameraGlow 2.5s ease-in-out 0.5s infinite;
+}
+
+/* FOV triangle subtly pulses */
+.slide.active#slide-2 .gc-fov-line {
+    animation: fovPulse 3s ease-in-out 1s infinite;
 }
 
 /* Info cards pop in with delay */
@@ -408,18 +438,30 @@ DEFENSE 2025-2026
 <text x="170" y="287" font-size="10" font-weight="700" fill="#f8fafc" text-anchor="middle">BASE</text>
 <!-- J1 -->
 <circle cx="170" cy="248" r="14" fill="url(#seg-grad-1)" filter="url(#soft-shadow)"/>
+<circle cx="170" cy="248" r="17" fill="none" stroke="#0891b2" stroke-width="1" opacity="0">
+<animate attributeName="r" values="14;20;14" dur="2.5s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0;0.6" dur="2.5s" repeatCount="indefinite"/>
+</circle>
 <circle cx="170" cy="248" r="6" fill="#0e7490"/>
 <text x="155" y="252" font-size="8" font-weight="700" fill="#0e7490" text-anchor="end">J1</text>
 <!-- Link 1 -->
 <g transform="rotate(-30 170 248)"><rect x="160" y="170" width="20" height="80" rx="5" fill="url(#seg-grad-2)" filter="url(#soft-shadow)"/></g>
 <!-- J2 -->
 <circle cx="130" cy="180" r="13" fill="url(#seg-grad-3)" filter="url(#soft-shadow)"/>
+<circle cx="130" cy="180" r="16" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0">
+<animate attributeName="r" values="13;19;13" dur="3s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.5;0;0.5" dur="3s" repeatCount="indefinite"/>
+</circle>
 <circle cx="130" cy="180" r="5" fill="#311b92"/>
 <text x="115" y="184" font-size="8" font-weight="700" fill="#4527a0" text-anchor="end">J2</text>
 <!-- Link 2 -->
 <g transform="rotate(35 130 180)"><rect x="120" y="105" width="20" height="80" rx="5" fill="url(#seg-grad-3)" filter="url(#soft-shadow)"/></g>
 <!-- J3 -->
 <circle cx="195" cy="135" r="11" fill="url(#seg-grad-4)" filter="url(#soft-shadow)"/>
+<circle cx="195" cy="135" r="14" fill="none" stroke="#db2777" stroke-width="1" opacity="0">
+<animate attributeName="r" values="11;17;11" dur="2.8s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.5;0;0.5" dur="2.8s" repeatCount="indefinite"/>
+</circle>
 <circle cx="195" cy="135" r="4" fill="#4c1d95"/>
 <text x="180" y="125" font-size="8" font-weight="700" fill="#6d28d9" text-anchor="end">J3</text>
 <!-- End-effector connector -->
@@ -452,7 +494,9 @@ DEFENSE 2025-2026
 <rect x="525" y="222" width="100" height="22" rx="11" fill="#ffffff" stroke="#059669" stroke-width="1" class="gc-target-label"/>
 <text x="575" y="237" font-size="11" fill="#047857" font-weight="700" text-anchor="middle">Target scene</text>
 <!-- Feedback loop -->
-<path d="M 590 195 Q 660 240 600 295 Q 480 325 280 305 Q 200 300 175 296" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4" opacity="0.65" class="gc-loop-path" style="--dash:520;"/>
+<path d="M 590 195 Q 660 240 600 295 Q 480 325 280 305 Q 200 300 175 296" fill="none" stroke="#7c3aed" stroke-width="2" stroke-dasharray="6 4" opacity="0.65" class="gc-loop-path" style="--dash:520;">
+<animate attributeName="stroke-dashoffset" values="0;-20" dur="1.5s" repeatCount="indefinite"/>
+</path>
 <polygon points="178,296 188,290 188,302" fill="#7c3aed" opacity="0.85"/>
 <rect x="365" y="305" width="180" height="22" rx="11" fill="#ffffff" stroke="#7c3aed" stroke-width="1"/>
 <text x="455" y="320" font-size="11" fill="#7c3aed" font-weight="700" text-anchor="middle">Visual feedback loop</text>
