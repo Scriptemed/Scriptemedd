@@ -1,0 +1,7 @@
+{
+  "task_id": "task-fix-robot-animation",
+  "task_description": "Fix the slide 2 robot animation CSS to exactly match the user's specified modifications. Correct timing delays, replace labelSlideIn with floatInUp for labels, and add energyFlow to gc-robot rect.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001"],
+  "blocked_reason": null
+}

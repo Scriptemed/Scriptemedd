@@ -1,0 +1,16 @@
+{
+  "project_type": "Static HTML presentation (single-file, self-contained)",
+  "language": "HTML/CSS/JavaScript",
+  "build_system": "None - single HTML file",
+  "test_framework": "None - manual HTML validation",
+  "build_command": "N/A",
+  "test_command": "grep-based validation of structure",
+  "verification_instructions": "Verify HTML tag balance, CSS animation keyframes present, correct animation delays match specification",
+  "snapshot_or_generated_files": null,
+  "setup_instructions": "No setup needed - single HTML file",
+  "environment_constraints": "INTEGRATIONS_ONLY network - no external resources available",
+  "contribution_requirements": "File must be fully self-contained with no external dependencies",
+  "key_patterns": "Minified CSS in style tag, SVG graphics inline, JavaScript at end of body",
+  "relevant_files": ["/projects/sandbox/Scriptemedd/soutenance.html"],
+  "directory_structure": "Single HTML file in repository root alongside login/account pages"
+}
