@@ -6,12 +6,14 @@
 <title>Direct Visual Servoing Using Multiscale Decomposition - Thesis Defense</title>
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 45%,#fef7ff 100%)}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;color:#1e293b;background:linear-gradient(135deg,#eef2ff 0%,#e0e7ff 45%,#f5f3ff 100%)}
 #canvas-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:0.55}
 #progress-bar{position:fixed;bottom:0;left:0;height:3px;background:linear-gradient(90deg,#0891b2,#7c3aed,#db2777);z-index:1000;transition:width 0.6s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(124,58,237,0.4)}
 #slide-counter{position:fixed;bottom:14px;right:24px;font-size:0.8rem;color:#64748b;z-index:1000;font-weight:500;letter-spacing:1.2px}
-.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;opacity:0;transform:translateY(30px) scale(0.97);transition:opacity 0.7s cubic-bezier(.4,0,.2,1),transform 0.7s cubic-bezier(.4,0,.2,1);pointer-events:none;z-index:1}
-.slide.active{opacity:1;transform:translateY(0) scale(1);pointer-events:all;z-index:10}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:60px 80px;opacity:0;pointer-events:none;z-index:1;transform:translateX(0) scale(1)}
+.slide.active{opacity:1;transform:translateX(0) scale(1);pointer-events:all;z-index:10}
+.slide.slide-exit-left{animation:slideExitLeft 0.6s cubic-bezier(0.55,0,1,0.45) forwards;z-index:5}
+.slide.slide-exit-right{animation:slideExitRight 0.6s cubic-bezier(0.55,0,1,0.45) forwards;z-index:5}
 .slide-content{max-width:1200px;width:100%;text-align:center;position:relative;z-index:2}
 h1{font-size:3rem;font-weight:800;letter-spacing:-1px;margin-bottom:16px;background:linear-gradient(110deg,#0891b2 0%,#7c3aed 45%,#db2777 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 h2{font-size:2rem;font-weight:700;margin-bottom:24px;background:linear-gradient(110deg,#0e7490,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-0.3px}
@@ -83,6 +85,10 @@ p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0
 .scroll-hint{position:absolute;bottom:48px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;color:#64748b;font-size:0.72rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;z-index:20}
 .scroll-hint .chevron{width:22px;height:22px;animation:bounce 1.8s ease-in-out infinite}
 @keyframes bounce{0%,100%{transform:translateY(0);opacity:0.6}50%{transform:translateY(6px);opacity:1}}
+@keyframes slideEnter{0%{opacity:0;transform:translateX(80px) scale(0.92);filter:blur(6px)}40%{opacity:1;filter:blur(0px)}100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0px)}}
+@keyframes slideEnterFromLeft{0%{opacity:0;transform:translateX(-80px) scale(0.92);filter:blur(6px)}40%{opacity:1;filter:blur(0px)}100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0px)}}
+@keyframes slideExitLeft{0%{opacity:1;transform:translateX(0) scale(1);filter:blur(0px)}100%{opacity:0;transform:translateX(-120px) scale(0.88);filter:blur(4px)}}
+@keyframes slideExitRight{0%{opacity:1;transform:translateX(0) scale(1);filter:blur(0px)}100%{opacity:0;transform:translateX(120px) scale(0.88);filter:blur(4px)}}
 .hero-visual{position:relative;width:100%;height:520px;display:flex;align-items:center;justify-content:center}
 .hero-visual svg{width:100%;height:100%;max-width:600px}
 @keyframes pulse-soft{0%,100%{opacity:0.45}50%{opacity:0.95}}
@@ -1176,43 +1182,85 @@ requestAnimationFrame(drawParticles);
 drawParticles();
 
 // Slide navigation
-let current=0;
-const slides=document.querySelectorAll('.slide');
-const total=slides.length;
-const progressBar=document.getElementById('progress-bar');
-const counter=document.getElementById('slide-counter');
+let current = 0;
+const slides = document.querySelectorAll('.slide');
+const total = slides.length;
+const progressBar = document.getElementById('progress-bar');
+const counter = document.getElementById('slide-counter');
+let isAnimating = false;
 
-function updateSlide(){
-slides.forEach((s,i)=>{
-s.classList.remove('active');
-if(i===current)s.classList.add('active');
-});
-progressBar.style.width=((current+1)/total*100)+'%';
-counter.textContent=(current+1)+' / '+total;
+function goToSlide(newIndex, direction) {
+  if (isAnimating || newIndex === current) return;
+  isAnimating = true;
+
+  const prevSlide = slides[current];
+  const nextSlide = slides[newIndex];
+
+  // Clean up all slides
+  slides.forEach(s => {
+    s.classList.remove('slide-exit-left', 'slide-exit-right');
+    if (s !== prevSlide && s !== nextSlide) {
+      s.classList.remove('active');
+      s.style.animation = '';
+      s.style.opacity = '0';
+    }
+  });
+
+  // Animate previous slide out
+  prevSlide.classList.remove('active');
+  prevSlide.classList.add(direction === 'forward' ? 'slide-exit-left' : 'slide-exit-right');
+
+  // Animate next slide in
+  nextSlide.classList.add('active');
+  nextSlide.style.opacity = '1';
+  nextSlide.style.animation = direction === 'forward'
+    ? 'slideEnter 0.7s cubic-bezier(0.22,1,0.36,1) forwards'
+    : 'slideEnterFromLeft 0.7s cubic-bezier(0.22,1,0.36,1) forwards';
+
+  // Cleanup after animation
+  const cleanup = () => {
+    prevSlide.classList.remove('slide-exit-left', 'slide-exit-right');
+    prevSlide.style.opacity = '0';
+    prevSlide.style.animation = '';
+    nextSlide.style.animation = '';
+    isAnimating = false;
+  };
+
+  nextSlide.addEventListener('animationend', cleanup, { once: true });
+  // Fallback timeout
+  setTimeout(() => {
+    if (isAnimating) cleanup();
+  }, 900);
+
+  current = newIndex;
+  progressBar.style.width = ((current + 1) / total * 100) + '%';
+  counter.textContent = (current + 1) + ' / ' + total;
 }
 
-function next(){if(current<total-1){current++;updateSlide()}}
-function prev(){if(current>0){current--;updateSlide()}}
+function next() { if (current < total - 1) goToSlide(current + 1, 'forward'); }
+function prev() { if (current > 0) goToSlide(current - 1, 'backward'); }
 
-document.addEventListener('keydown',function(e){
-if(e.key==='ArrowRight'||e.key==='ArrowDown'||e.key===' '){e.preventDefault();next()}
-if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();prev()}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); prev(); }
 });
 
-document.addEventListener('click',function(e){
-const x=e.clientX;
-if(x>w/2)next();else prev();
+document.addEventListener('click', function(e) {
+  const x = e.clientX;
+  if (x > w / 2) next(); else prev();
 });
 
 // Touch support
-let touchStartX=0;
-document.addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX});
-document.addEventListener('touchend',function(e){
-const diff=e.changedTouches[0].clientX-touchStartX;
-if(Math.abs(diff)>50){if(diff<0)next();else prev()}
+let touchStartX = 0;
+document.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; });
+document.addEventListener('touchend', function(e) {
+  const diff = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(diff) > 50) { if (diff < 0) next(); else prev(); }
 });
 
-updateSlide();
+// Initialize
+progressBar.style.width = ((current + 1) / total * 100) + '%';
+counter.textContent = (current + 1) + ' / ' + total;
 })();
 </script>
 </body>
