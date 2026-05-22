@@ -34,5 +34,5 @@
     "Run: grep 'seq-s11-tags' /projects/sandbox/Scriptemedd/presentation.html to confirm slide 11 tags section exists"
   ],
   "blocked_reason": null,
-  "findings": "All verification checks passed. HTML valid, 11 slides confirmed, 10 @keyframes animations, 4 nth-child tag color selectors, robot SVG with gc-robot/gc-camera/gc-fov-line classes, hero-tags and seq-s11-tags present, JS navigation and particle canvas working."
+  "findings": "All verification checks passed. HTML valid, 11 slides confirmed, 10 @keyframes animations, 4 nth-child tag color selectors, robot SVG with gc-robot/gc-camera/gc-fov-line classes, hero-tags and seq-s11-tags present, JS navigation and particle canvas working. Post-review fix applied: replaced all '%%' with '%' in CSS (Python format-string escaping had leaked into the output), and added transform-box: fill-box + transform-origin: center to .spark rule for correct SVG orbit animation."
 }
