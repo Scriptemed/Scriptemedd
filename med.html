@@ -232,23 +232,17 @@ p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
-/* ===== SLIDE 2 : STUNNING ROBOT ANIMATION ===== */
-@keyframes robotAssemble {
-    0% { opacity: 0; transform: translateY(30px) scale(0.8); filter: blur(3px); }
-    60% { opacity: 1; transform: translateY(-5px) scale(1.03); filter: blur(0); }
-    100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
-}
-@keyframes jointActivate {
-    0% { opacity: 0; transform: scale(0) rotate(-90deg); }
-    50% { opacity: 1; transform: scale(1.3) rotate(10deg); filter: drop-shadow(0 0 12px #7c3aed); }
-    75% { transform: scale(0.9) rotate(-3deg); }
-    100% { opacity: 1; transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 5px rgba(124,58,237,0.4)); }
+/* ===== SLIDE 2 : CREATIVE ROBOT ANIMATION ===== */
+@keyframes robotSlideUp {
+    0% { opacity: 0; transform: translateY(50px) scale(0.85); }
+    70% { opacity: 1; transform: translateY(-6px) scale(1.02); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes cameraLensFocus {
     0%, 100% { filter: drop-shadow(0 0 3px #22d3ee); transform: scale(1); }
-    25% { filter: drop-shadow(0 0 14px #22d3ee) drop-shadow(0 0 22px #06b6d4); transform: scale(1.12); }
-    50% { filter: drop-shadow(0 0 6px #0891b2); transform: scale(0.94); }
-    75% { filter: drop-shadow(0 0 18px #7c3aed) drop-shadow(0 0 28px #22d3ee); transform: scale(1.08); }
+    25% { filter: drop-shadow(0 0 14px #22d3ee) drop-shadow(0 0 22px #06b6d4); transform: scale(1.1); }
+    50% { filter: drop-shadow(0 0 5px #0891b2); transform: scale(0.95); }
+    75% { filter: drop-shadow(0 0 16px #7c3aed) drop-shadow(0 0 24px #22d3ee); transform: scale(1.07); }
 }
 @keyframes fovShoot {
     0% { opacity: 0; stroke-dashoffset: var(--dash, 260); }
@@ -257,74 +251,39 @@ p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0
 }
 @keyframes robotBreath {
     0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.006) translateY(-2px); }
+    50% { transform: scale(1.005) translateY(-1.5px); }
 }
 
-/* The whole robot breathes gently after assembly */
+/* Robot appears as a whole unit - clean and smooth */
 .slide.active#slide-2 .gc-robot {
-    animation: robotBreath 5s ease-in-out 4.5s infinite;
-}
-
-/* Robot base and structure appear piece by piece */
-.slide.active#slide-2 .gc-robot > :nth-child(1) {
-    opacity: 0; animation: robotAssemble 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards 0.3s;
-}
-.slide.active#slide-2 .gc-robot > :nth-child(2),
-.slide.active#slide-2 .gc-robot > :nth-child(3),
-.slide.active#slide-2 .gc-robot > :nth-child(4) {
-    opacity: 0; animation: robotAssemble 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards 0.6s;
-}
-.slide.active#slide-2 .gc-robot > :nth-child(5),
-.slide.active#slide-2 .gc-robot > :nth-child(6),
-.slide.active#slide-2 .gc-robot > :nth-child(7) {
-    opacity: 0; animation: jointActivate 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards 1.0s;
-}
-.slide.active#slide-2 .gc-robot > :nth-child(8) {
-    opacity: 0; animation: robotAssemble 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards 1.3s;
-}
-.slide.active#slide-2 .gc-robot > :nth-child(9),
-.slide.active#slide-2 .gc-robot > :nth-child(10),
-.slide.active#slide-2 .gc-robot > :nth-child(11) {
-    opacity: 0; animation: jointActivate 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards 1.6s;
-}
-.slide.active#slide-2 .gc-robot > :nth-child(12) {
-    opacity: 0; animation: robotAssemble 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards 1.9s;
-}
-.slide.active#slide-2 .gc-robot > :nth-child(13),
-.slide.active#slide-2 .gc-robot > :nth-child(14),
-.slide.active#slide-2 .gc-robot > :nth-child(15) {
-    opacity: 0; animation: jointActivate 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards 2.1s;
-}
-.slide.active#slide-2 .gc-robot > :nth-child(16),
-.slide.active#slide-2 .gc-robot > :nth-child(17) {
-    opacity: 0; animation: robotAssemble 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards 2.4s;
-}
-
-/* Camera with lens focus pulse */
-.slide.active#slide-2 .gc-camera {
     opacity: 0;
-    animation: jointActivate 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards 2.6s,
-               cameraLensFocus 3.5s ease-in-out 4s infinite;
+    animation: robotSlideUp 1s cubic-bezier(0.34,1.56,0.64,1) forwards 0.3s,
+               robotBreath 5s ease-in-out 2.5s infinite;
 }
 
-/* FOV lines shoot out */
+/* Camera gets a special lens focus pulse after robot appears */
+.slide.active#slide-2 .gc-camera {
+    animation: cameraLensFocus 3.5s ease-in-out 2s infinite;
+}
+
+/* FOV lines shoot out after robot is visible */
 .slide.active#slide-2 .gc-fov-line {
     opacity: 0;
     stroke-dasharray: var(--dash, 260);
     stroke-dashoffset: var(--dash, 260);
-    animation: fovShoot 0.9s ease forwards 3.0s;
+    animation: fovShoot 1s ease forwards 1.5s;
 }
 .slide.active#slide-2 .gc-guide-line {
     opacity: 0;
     stroke-dasharray: var(--dash, 240);
     stroke-dashoffset: var(--dash, 240);
-    animation: fovShoot 0.8s ease forwards 3.1s;
+    animation: fovShoot 0.9s ease forwards 1.7s;
 }
 
 /* Target appears */
 .slide.active#slide-2 .gc-target {
     opacity: 0;
-    animation: robotAssemble 0.7s cubic-bezier(0.34,1.56,0.64,1) forwards 2.8s;
+    animation: robotSlideUp 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards 1.3s;
 }
 
 /* Feedback loop draws itself */
@@ -332,22 +291,22 @@ p,.desc{font-size:1.1rem;line-height:1.75;color:#334155;max-width:900px;margin:0
     opacity: 0;
     stroke-dasharray: var(--dash, 520);
     stroke-dashoffset: var(--dash, 520);
-    animation: drawPath 1.2s ease forwards 3.3s;
+    animation: drawPath 1.4s ease forwards 1.9s;
 }
 
 /* Labels float in */
-.slide.active#slide-2 .gc-cam-label { opacity: 0; animation: floatInUp 0.5s ease forwards 2.8s; }
-.slide.active#slide-2 .gc-fov-label { opacity: 0; animation: floatInUp 0.5s ease forwards 3.1s; }
-.slide.active#slide-2 .gc-target-label { opacity: 0; animation: floatInUp 0.5s ease forwards 3.4s; }
+.slide.active#slide-2 .gc-cam-label { opacity: 0; animation: floatInUp 0.5s ease forwards 1.4s; }
+.slide.active#slide-2 .gc-fov-label { opacity: 0; animation: floatInUp 0.5s ease forwards 1.8s; }
+.slide.active#slide-2 .gc-target-label { opacity: 0; animation: floatInUp 0.5s ease forwards 2.1s; }
 
 /* Info cards pop in */
 .slide.active#slide-2 .gc-card {
     opacity: 0;
     animation: popGlow 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards;
 }
-.slide.active#slide-2 .gc-card:nth-child(1) { animation-delay: 3.8s; }
-.slide.active#slide-2 .gc-card:nth-child(2) { animation-delay: 4.1s; }
-.slide.active#slide-2 .gc-card:nth-child(3) { animation-delay: 4.4s; }
+.slide.active#slide-2 .gc-card:nth-child(1) { animation-delay: 2.4s; }
+.slide.active#slide-2 .gc-card:nth-child(2) { animation-delay: 2.7s; }
+.slide.active#slide-2 .gc-card:nth-child(3) { animation-delay: 3.0s; }
 
 /* ===== SLIDE 3 : PROBLEM STATEMENT ===== */
 .slide.active#slide-3 .ps-card {
